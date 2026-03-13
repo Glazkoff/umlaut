@@ -9,17 +9,15 @@ Web UI for OpenClaw's self-evolution engine. Monitor, configure, and control evo
 
 ## Install
 
-One command:
-
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Glazkoff/umlaut/main/scripts/install.sh | bash
-```
-
-Or clone manually:
-
-```bash
+# Clone to workspace
 git clone https://github.com/Glazkoff/umlaut.git ~/.openclaw/workspace/umlaut
 cd ~/.openclaw/workspace/umlaut
+
+# Install dependencies (uv recommended)
+uv sync
+
+# Or with pip
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 ```
@@ -28,21 +26,31 @@ pip install -r requirements.txt
 
 ```bash
 cd ~/.openclaw/workspace/umlaut
+
+# With uv
+uv run uvicorn main:app --host 127.0.0.1 --port 8080
+
+# Or with venv
 source .venv/bin/activate
 uvicorn main:app --host 127.0.0.1 --port 8080
 ```
 
 Access: http://localhost:8080
 
-## Commands
+## Systemd (Linux)
 
-| Command | Description |
-|---------|-------------|
-| `umlaut start` | Start server on port 8080 |
-| `umlaut stop` | Stop server |
-| `umlaut restart` | Restart server |
-| `umlaut status` | Check server status |
-| `umlaut logs` | View logs |
+```bash
+# Install as service
+sudo cp ~/.openclaw/workspace/umlaut/umlaut.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable umlaut
+sudo systemctl start umlaut
+
+# Commands
+sudo systemctl status umlaut
+sudo systemctl restart umlaut
+journalctl -u umlaut -f
+```
 
 ## Features
 
@@ -54,8 +62,8 @@ Access: http://localhost:8080
 
 ## Requirements
 
-- Python 3.11+
-- OpenClaw (optional, for full integration)
+- Python 3.10+
+- uv or pip
 
 ## Environment
 

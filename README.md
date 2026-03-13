@@ -83,11 +83,10 @@ Umlaut makes this process **visible** and **controllable**.
 ### Option 1: One-Command Install (Recommended)
 
 ```bash
-# Install as OpenClaw skill
-openclaw skill install https://github.com/Glazkoff/umlaut
-
-# Or with curl
-curl -fsSL https://raw.githubusercontent.com/Glazkoff/umlaut/main/scripts/install.sh | bash
+# Clone and install
+git clone https://github.com/Glazkoff/umlaut.git ~/.openclaw/workspace/umlaut
+cd ~/.openclaw/workspace/umlaut
+uv sync  # or: python -m venv .venv && pip install -r requirements.txt
 ```
 
 ### Option 2: Manual Installation
@@ -97,40 +96,39 @@ curl -fsSL https://raw.githubusercontent.com/Glazkoff/umlaut/main/scripts/instal
 git clone https://github.com/Glazkoff/umlaut.git
 cd umlaut
 
-# Create virtual environment
+# Install dependencies with uv (recommended)
+uv sync
+
+# Or with pip
 python -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-
-# Install dependencies
 pip install -r requirements.txt
-
-# Run server
-uvicorn main:app --host 0.0.0.0 --port 8080
 ```
 
-### Option 3: Docker
+### Option 3: Systemd Service (Linux)
 
 ```bash
-# Pull image
-docker pull Glazkoff/umlaut:latest
+# Copy service file
+sudo cp umlaut.service /etc/systemd/system/
+
+# Enable and start
+sudo systemctl daemon-reload
+sudo systemctl enable umlaut
+sudo systemctl start umlaut
+```
+
+### Option 4: Docker
+
+```bash
+# Build image
+docker build -t umlaut .
 
 # Run container
 docker run -d \
   -p 8080:8080 \
   -v ~/.openclaw:/root/.openclaw \
   --name umlaut \
-  Glazkoff/umlaut:latest
-```
-
-### Option 4: Systemd Service
-
-```bash
-# Install as systemd service
-sudo ./scripts/install-service.sh
-
-# Start service
-sudo systemctl start umlaut
-sudo systemctl enable umlaut
+  umlaut:latest
 ```
 
 ---
