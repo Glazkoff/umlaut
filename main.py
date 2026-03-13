@@ -469,7 +469,10 @@ async def get_history(project_name: str, limit: int = 100, debug: bool = False):
         return {"history": [], "debug_info": None}
     
     lines = history_path.read_text().strip().split("\n")
-    history = [json.loads(line) for line in lines[-limit:]]
+    history = [json.loads(line) for line in lines[-limit:] if line.strip()]
+    
+    # Sort by timestamp descending (newest first)
+    history.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
     
     # Add debug info if requested
     debug_info = None
