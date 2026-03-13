@@ -46,8 +46,12 @@ check_prereqs() {
         exit 1
     fi
     
-    if ! command -v openclaw &> /dev/null; then
-        log "OpenClaw CLI not found. Install: npm install -g openclaw"
+    # Use full path to openclaw (not in PATH when running from cron)
+    OPENCLAW_CMD="/root/.nvm/versions/node/v24.14.0/bin/openclaw"
+    
+    if [ ! -f "$OPENCLAW_CMD" ]; then
+        log "OpenClaw CLI not found at $OPENCLAW_CMD"
+        log "Install: npm install -g openclaw"
         exit 1
     fi
 }
@@ -183,7 +187,7 @@ Focus on:
 
 Output a JSON summary of your findings."
     
-    openclaw agent --message "$PROMPT" --thinking high 2>&1 | tee -a "$PROJECT_DIR/agent.log" || true
+    $OPENCLAW_CMD agent --message "$PROMPT" --thinking high 2>&1 | tee -a "$PROJECT_DIR/agent.log" || true
     
     log_analyze "Analysis complete"
     append_history "phase" "ANALYZE phase complete"
@@ -228,7 +232,7 @@ Be specific about:
 
 Output a JSON plan with steps."
     
-    openclaw agent --message "$PROMPT" --thinking medium 2>&1 | tee -a "$PROJECT_DIR/agent.log" || true
+    $OPENCLAW_CMD agent --message "$PROMPT" --thinking medium 2>&1 | tee -a "$PROJECT_DIR/agent.log" || true
     
     # Save current task to state
     save_state "EXECUTE" "$COST" "$TASK"
@@ -276,7 +280,7 @@ After implementing, output:
 - Test results
 - Commit hash"
     
-    openclaw agent --message "$PROMPT" --thinking medium 2>&1 | tee -a "$PROJECT_DIR/agent.log" || true
+    $OPENCLAW_CMD agent --message "$PROMPT" --thinking medium 2>&1 | tee -a "$PROJECT_DIR/agent.log" || true
     
     log_execute "Execution complete"
     append_history "phase" "EXECUTE phase complete for $TASK_ID"
@@ -316,7 +320,7 @@ Output:
 - Whether task passes (true/false)
 - Any learnings or gotchas discovered"
     
-    openclaw agent --message "$PROMPT" --thinking high 2>&1 | tee -a "$PROJECT_DIR/agent.log" || true
+    $OPENCLAW_CMD agent --message "$PROMPT" --thinking high 2>&1 | tee -a "$PROJECT_DIR/agent.log" || true
     
     log_review "Review complete"
     append_history "phase" "REVIEW phase complete for $TASK_ID"
