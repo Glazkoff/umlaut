@@ -88,10 +88,10 @@ cd ~/.openclaw/workspace/umlaut
 ./install.sh
 ```
 
-### Option 2: One-Liner (if repo is public)
+### Option 2: One-Liner
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Glazkoff/umlaut/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Glazkoff/umlaut/master/install.sh | bash
 ```
 
 ### Option 2: Manual Install
