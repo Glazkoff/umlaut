@@ -296,7 +296,7 @@ function renderTasksSummary(tasks) {
                 </div>
         `;
         
-        taskList.slice(0, 5).forEach(task => {
+        taskList.forEach(task => {
             const catIcon = CATEGORY_ICONS[task.category] || '📋';
             const priorityClass = task.priority_score >= 7 ? 'priority-high' : task.priority_score >= 4 ? 'priority-medium' : 'priority-low';
             
@@ -313,10 +313,6 @@ function renderTasksSummary(tasks) {
                 </div>
             `;
         });
-        
-        if (taskList.length > 5) {
-            html += `<div style="text-align: center; color: var(--text-muted); font-size: 12px; padding: 8px;">+${taskList.length - 5} more</div>`;
-        }
         
         html += '</div>';
     });
