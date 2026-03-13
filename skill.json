@@ -2,7 +2,7 @@
   "name": "umlaut",
   "version": "1.0.0",
   "description": "Web interface for monitoring and controlling OpenClaw's self-evolution engine",
-  "author": "OpenClaw Team",
+  "author": "Nikita Glazkov",
   "license": "MIT",
   "repository": "https://github.com/Glazkoff/umlaut",
   "keywords": [
