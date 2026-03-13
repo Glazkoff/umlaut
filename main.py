@@ -1128,21 +1128,62 @@ Generate the PRD now:"""
         prompt_file = f.name
     
     try:
+        # Use full path to openclaw executable
+        openclaw_path = "/root/.nvm/versions/node/v24.14.0/bin/openclaw"
+        
+        if not Path(openclaw_path).exists():
+            raise HTTPException(status_code=500, detail="OpenClaw CLI not found. Please install it first.")
+        
         result = subprocess.run(
-            ["openclaw", "agent", "--message", prompt, "--thinking", "medium"],
+            [openclaw_path, "agent", "--message", prompt, "--thinking", "medium"],
             capture_output=True, text=True, timeout=120, cwd=str(repo_dir)
         )
         
+        if result.returncode != 0:
+            error_msg = result.stderr or result.stdout or "Unknown error"
+            raise HTTPException(status_code=500, detail=f"OpenClaw agent failed: {error_msg[:200]}")
+        
         output = result.stdout
+        
+        if not output or len(output.strip()) < 10:
+            raise HTTPException(status_code=500, detail="OpenClaw agent returned empty output")
         
         # Extract JSON from output
         import re
         json_match = re.search(r'\{[\s\S]*"userStories"[\s\S]*\}', output)
+        
         if json_match:
-            prd_json = json.loads(json_match.group(0))
+            try:
+                prd_json = json.loads(json_match.group(0))
+            except json.JSONDecodeError as e:
+                # Try to clean up the JSON
+                json_str = json_match.group(0)
+                # Remove trailing commas
+                json_str = re.sub(r',(\s*[}\]])', r'\1', json_str)
+                try:
+                    prd_json = json.loads(json_str)
+                except:
+                    raise HTTPException(status_code=500, detail=f"Failed to parse generated PRD JSON: {str(e)}")
         else:
             # Fallback: try to parse entire output as JSON
-            prd_json = json.loads(output)
+            try:
+                prd_json = json.loads(output)
+            except json.JSONDecodeError:
+                # Last resort: create a simple PRD from the output
+                raise HTTPException(
+                    status_code=500, 
+                    detail=f"Could not extract valid PRD JSON from agent output. Output length: {len(output)}"
+                )
+        
+        # Validate PRD structure
+        if "userStories" not in prd_json:
+            prd_json["userStories"] = []
+        if "project" not in prd_json:
+            prd_json["project"] = project_name
+        if "branchName" not in prd_json:
+            prd_json["branchName"] = f"feature/{project_name}"
+        if "description" not in prd_json:
+            prd_json["description"] = description[:200]
         
         # Save generated PRD
         save_json(project_name, "prd.json", prd_json)
