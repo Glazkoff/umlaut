@@ -65,10 +65,8 @@ wheels/
 *.bak
 *.swp
 
-# OpenClaw specific
+# OpenClaw specific - backup files only
 *.json.bak
-STATE.json.bak
-TASKS.json.bak
 
 # Nginx
 nginx.conf.local
