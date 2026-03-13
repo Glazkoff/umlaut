@@ -80,16 +80,18 @@ Umlaut makes this process **visible** and **controllable**.
 
 ## 📦 Installation
 
-### Option 1: One-Line Install (Recommended)
+### Option 1: Clone & Install
+
+```bash
+git clone https://github.com/Glazkoff/umlaut.git ~/.openclaw/workspace/umlaut
+cd ~/.openclaw/workspace/umlaut
+./install.sh
+```
+
+### Option 2: One-Liner (if repo is public)
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Glazkoff/umlaut/main/install.sh | bash
-```
-
-Or with custom directory:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/Glazkoff/umlaut/main/install.sh | bash -s /path/to/umlaut
 ```
 
 ### Option 2: Manual Install
