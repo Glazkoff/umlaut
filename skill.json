@@ -1,0 +1,140 @@
+{
+  "name": "evolution-ui",
+  "version": "1.0.0",
+  "description": "Web interface for monitoring and controlling OpenClaw's self-evolution engine",
+  "author": "OpenClaw Team",
+  "license": "MIT",
+  "repository": "https://github.com/YOUR_USERNAME/evolution-ui",
+  "keywords": [
+    "openclaw",
+    "evolution",
+    "self-evolution",
+    "autonomous-code-improvement",
+    "web-ui",
+    "dashboard"
+  ],
+  "categories": [
+    "ui",
+    "monitoring",
+    "evolution"
+  ],
+  "requirements": {
+    "python": ">=3.11",
+    "openclaw": ">=0.1.0"
+  },
+  "install": {
+    "command": "bash scripts/install.sh",
+    "post_install": "evolution-ui init"
+  },
+  "commands": {
+    "start": {
+      "description": "Start Evolution UI server",
+      "command": "uvicorn main:app --host 127.0.0.1 --port 8080",
+      "aliases": ["ui", "dashboard"]
+    },
+    "stop": {
+      "description": "Stop Evolution UI server",
+      "command": "pkill -f 'uvicorn main:app --port 8080'"
+    },
+    "restart": {
+      "description": "Restart Evolution UI server",
+      "command": "bash -c 'pkill -f uvicorn && sleep 2 && uvicorn main:app --host 127.0.0.1 --port 8080'"
+    },
+    "status": {
+      "description": "Check Evolution UI status",
+      "command": "curl -s http://localhost:8080/api/system/status | jq ."
+    },
+    "logs": {
+      "description": "View Evolution UI logs",
+      "command": "tail -f /tmp/evolution-ui.log"
+    }
+  },
+  "endpoints": {
+    "web": "http://localhost:8080",
+    "api": "http://localhost:8080/api",
+    "websocket": "ws://localhost:8080/ws"
+  },
+  "environment_variables": {
+    "EVOLUTION_UI_HOST": {
+      "description": "Host to bind server",
+      "default": "127.0.0.1"
+    },
+    "EVOLUTION_UI_PORT": {
+      "description": "Port to bind server",
+      "default": "8080"
+    },
+    "EVOLUTION_UI_DEBUG": {
+      "description": "Enable debug mode",
+      "default": "false"
+    },
+    "LOG_LEVEL": {
+      "description": "Logging level",
+      "default": "INFO"
+    }
+  },
+  "permissions": [
+    "filesystem.read",
+    "filesystem.write",
+    "network.http",
+    "network.websocket",
+    "process.execute"
+  ],
+  "dependencies": [
+    "fastapi>=0.104.0",
+    "uvicorn[standard]>=0.24.0",
+    "python-multipart>=0.0.6",
+    "aiofiles>=23.2.1",
+    "websockets>=12.0"
+  ],
+  "optional_dependencies": {
+    "nginx": "For production deployment",
+    "docker": "For containerized deployment"
+  },
+  "examples": [
+    {
+      "title": "Start Evolution UI",
+      "command": "evolution-ui start",
+      "description": "Start the web interface on http://localhost:8080"
+    },
+    {
+      "title": "Create new project",
+      "command": "curl -X POST http://localhost:8080/api/projects -d '{\"name\": \"my-project\"}'",
+      "description": "Create a new evolution project"
+    },
+    {
+      "title": "Configure thinking levels",
+      "command": "curl -X PUT 'http://localhost:8080/api/projects/my-project/config/thinking?phase=EXECUTE&level=medium'",
+      "description": "Set EXECUTE phase to medium thinking"
+    }
+  ],
+  "troubleshooting": [
+    {
+      "issue": "Port 8080 already in use",
+      "solution": "Change port: uvicorn main:app --port 8081"
+    },
+    {
+      "issue": "WebSocket connection failed",
+      "solution": "Check nginx config for WebSocket support"
+    },
+    {
+      "issue": "Evolution not starting",
+      "solution": "Check project state: cat ~/.openclaw/workspace/evolution/my-project/STATE.json"
+    }
+  ],
+  "documentation": {
+    "readme": "https://github.com/YOUR_USERNAME/evolution-ui/blob/main/README.md",
+    "api": "https://github.com/YOUR_USERNAME/evolution-ui/blob/main/docs/API.md",
+    "examples": "https://github.com/YOUR_USERNAME/evolution-ui/tree/main/examples"
+  },
+  "support": {
+    "issues": "https://github.com/YOUR_USERNAME/evolution-ui/issues",
+    "discord": "https://discord.gg/clawd",
+    "email": "support@openclaw.ai"
+  },
+  "changelog": "https://github.com/YOUR_USERNAME/evolution-ui/blob/main/CHANGELOG.md",
+  "icon": "🧬",
+  "screenshots": [
+    "https://github.com/YOUR_USERNAME/evolution-ui/raw/main/docs/screenshots/dashboard.png",
+    "https://github.com/YOUR_USERNAME/evolution-ui/raw/main/docs/screenshots/thinking-config.png"
+  ]
+}

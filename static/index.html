@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evolution UI - OpenClaw Self-Evolution Engine</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <h1 class="logo">🧬 Evolution UI</h1>
+                <span class="subtitle">OpenClaw Self-Evolution Engine</span>
+            </div>
+            <div class="header-right">
+                <div class="project-selector">
+                    <select id="projectSelect" onchange="selectProject(this.value)">
+                        <option value="">Select Project...</option>
+                    </select>
+                    <button onclick="showNewProjectModal()" class="btn btn-sm">+ New</button>
+                </div>
+                <div class="status-indicator" id="connectionStatus">
+                    <span class="dot"></span>
+                    <span class="text">Connected</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main" id="mainContent">
+            <!-- Empty State -->
+            <div class="empty-state" id="emptyState">
+                <div class="empty-icon">🧬</div>
+                <h2>Welcome to Evolution UI</h2>
+                <p>Select a project or create a new one to start autonomous evolution.</p>
+                <button onclick="showNewProjectModal()" class="btn btn-primary btn-lg">+ Create Project</button>
+            </div>
+
+            <!-- Project View (hidden by default) -->
+            <div class="project-view" id="projectView" style="display: none;">
+                <!-- Project Header with Status -->
+                <div class="project-header">
+                    <div class="project-info">
+                        <h2 class="project-name" id="projectName">-</h2>
+                        <span class="project-phase badge" id="projectPhase">IDLE</span>
+                    </div>
+                    <div class="project-controls">
+                        <button onclick="startEvolution()" class="btn btn-success" id="btnStart">▶ Start Evolution</button>
+                        <button onclick="pauseEvolution()" class="btn btn-warning" id="btnPause" style="display:none;">⏸ Pause</button>
+                        <button onclick="resumeEvolution()" class="btn btn-primary" id="btnResume" style="display:none;">▶ Resume</button>
+                        <button onclick="stopEvolution()" class="btn btn-danger" id="btnStop" style="display:none;">⏹ Stop</button>
+                    </div>
+                </div>
+
+                <!-- Current Status Panel -->
+                <div class="status-panel" id="statusPanel">
+                    <div class="status-header">
+                        <div class="status-icon" id="statusIcon">🔄</div>
+                        <div class="status-info">
+                            <h3 id="statusTitle">Evolution Status</h3>
+                            <p id="statusDescription">Select a project to see its status</p>
+                        </div>
+                    </div>
+                    <div class="status-details" id="statusDetails">
+                        <!-- Dynamic content -->
+                    </div>
+                </div>
+
+                <!-- Stats Bar -->
+                <div class="stats-bar">
+                    <div class="stat">
+                        <span class="stat-label">Cycle</span>
+                        <span class="stat-value" id="statCycle">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Budget</span>
+                        <span class="stat-value" id="statBudget">$0 / $50</span>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="budgetProgress" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Duration</span>
+                        <span class="stat-value" id="statDuration">8h</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Tasks Done</span>
+                        <span class="stat-value" id="statTasksDone">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Tests</span>
+                        <span class="stat-value" id="statTests">-</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Coverage</span>
+                        <span class="stat-value" id="statCoverage">-</span>
+                    </div>
+                </div>
+
+                <!-- Current Activity (if running) -->
+                <div class="current-activity" id="currentActivity" style="display: none;">
+                    <h3>📍 Current Activity</h3>
+                    <div class="activity-content" id="activityContent">
+                        <!-- Dynamic content -->
+                    </div>
+                </div>
+
+                <!-- Cron Status Section -->
+                <div class="cron-section" id="cronSection">
+                    <div class="section-header">
+                        <h3>⏰ Scheduled Jobs</h3>
+                        <button onclick="showCronModal()" class="btn btn-sm btn-primary">+ Add Job</button>
+                    </div>
+                    <div class="cron-content" id="cronContent">
+                        <div class="cron-loading">Loading...</div>
+                    </div>
+                </div>
+
+                <!-- Two Column Layout -->
+                <div class="two-columns">
+                    <!-- Left: Tasks Summary -->
+                    <div class="column">
+                        <div class="section-header">
+                            <h3>📋 Tasks Overview</h3>
+                            <button onclick="showAddTaskModal('backlog')" class="btn btn-sm">+ Add Task</button>
+                        </div>
+                        <div class="tasks-summary" id="tasksSummary">
+                            <!-- Task groups -->
+                        </div>
+                    </div>
+
+                    <!-- Right: Recent Activity -->
+                    <div class="column">
+                        <div class="section-header">
+                            <h3>📜 Recent Activity</h3>
+                            <div class="header-buttons">
+                                <button onclick="toggleDebugMode()" class="btn btn-sm btn-secondary" id="btnDebug">🔧 Debug</button>
+                                <button onclick="loadHistory()" class="btn btn-sm btn-secondary">🔄</button>
+                            </div>
+                        </div>
+                        <div class="activity-feed" id="activityFeed">
+                            <div class="empty-activity">No recent activity</div>
+                        </div>
+                        
+                        <!-- Debug Info Panel -->
+                        <div id="debugInfo" class="debug-info" style="display: none;">
+                            <!-- Debug content will be inserted here -->
+                        </div>
+                        
+                        <!-- Force Action Button -->
+                        <div class="force-action-section">
+                            <button onclick="forceEvolutionCycle()" class="btn btn-warning btn-block" id="btnForceAction">
+                                ⚡ Force Next Action
+                            </button>
+                            <button onclick="rollbackProject()" class="btn btn-danger btn-block" id="btnRollback" style="margin-top: 8px;">
+                                🔄 Rollback Everything
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Metrics Section -->
+                <div class="metrics-section" id="metricsSection">
+                    <h3>📊 Project Metrics</h3>
+                    <div class="metrics-grid" id="metricsGrid">
+                        <!-- Metrics cards -->
+                    </div>
+                </div>
+
+                <!-- Thinking Level Configuration -->
+                <div class="thinking-section" id="thinkingSection">
+                    <div class="section-header">
+                        <h3>🧠 Thinking Levels Configuration</h3>
+                        <button onclick="saveThinkingConfig()" class="btn btn-sm btn-primary" id="btnSaveThinking">💾 Save</button>
+                    </div>
+                    <div class="thinking-grid" id="thinkingGrid">
+                        <div class="thinking-item">
+                            <div class="thinking-header">
+                                <span class="thinking-label">ANALYZE</span>
+                                <span class="thinking-icon">🔍</span>
+                            </div>
+                            <select id="thinkingAnalyze" class="thinking-select">
+                                <option value="high">High (Deep analysis)</option>
+                                <option value="medium">Medium (Balanced)</option>
+                                <option value="low">Low (Fast)</option>
+                            </select>
+                            <span class="thinking-hint">Codebase analysis</span>
+                        </div>
+                        <div class="thinking-item">
+                            <div class="thinking-header">
+                                <span class="thinking-label">PLAN</span>
+                                <span class="thinking-icon">📋</span>
+                            </div>
+                            <select id="thinkingPlan" class="thinking-select">
+                                <option value="high">High (Detailed)</option>
+                                <option value="medium" selected>Medium (Balanced)</option>
+                                <option value="low">Low (Fast)</option>
+                            </select>
+                            <span class="thinking-hint">Task planning</span>
+                        </div>
+                        <div class="thinking-item">
+                            <div class="thinking-header">
+                                <span class="thinking-label">EXECUTE</span>
+                                <span class="thinking-icon">⚡</span>
+                            </div>
+                            <select id="thinkingExecute" class="thinking-select">
+                                <option value="high">High (Careful)</option>
+                                <option value="medium" selected>Medium (Balanced)</option>
+                                <option value="low">Low (Fast)</option>
+                            </select>
+                            <span class="thinking-hint">Code implementation</span>
+                        </div>
+                        <div class="thinking-item">
+                            <div class="thinking-header">
+                                <span class="thinking-label">REVIEW</span>
+                                <span class="thinking-icon">✅</span>
+                            </div>
+                            <select id="thinkingReview" class="thinking-select">
+                                <option value="high">High (Thorough)</option>
+                                <option value="medium">Medium (Balanced)</option>
+                                <option value="low" selected>Low (Fast check)</option>
+                            </select>
+                            <span class="thinking-hint">Quality validation</span>
+                        </div>
+                    </div>
+                    <div class="thinking-info">
+                        <p><strong>💡 Tip:</strong> Lower thinking levels = faster cycles, higher = better quality. Recommended: ANALYZE=high, EXECUTE=medium, REVIEW=low</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Modals -->
+        <!-- New Project Modal -->
+        <div class="modal" id="newProjectModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Create New Project</h3>
+                    <button class="modal-close" onclick="closeModal('newProjectModal')">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Project Name</label>
+                        <input type="text" id="newProjectName" placeholder="my-awesome-project">
+                    </div>
+                    <div class="form-group">
+                        <label>GitHub Repository URL</label>
+                        <input type="text" id="newProjectRepo" placeholder="https://github.com/user/repo">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Budget (USD)</label>
+                            <input type="number" id="newProjectBudget" value="50">
+                        </div>
+                        <div class="form-group">
+                            <label>Duration (hours)</label>
+                            <input type="number" id="newProjectDuration" value="8">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeModal('newProjectModal')">Cancel</button>
+                    <button class="btn btn-primary" onclick="createProject()">Create Project</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Task Modal -->
+        <div class="modal" id="addTaskModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Add New Task</h3>
+                    <button class="modal-close" onclick="closeModal('addTaskModal')">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Task Title</label>
+                        <input type="text" id="taskTitle" placeholder="Fix bug in authentication">
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="taskDescription" rows="3" placeholder="Detailed description..."></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Category</label>
+                            <select id="taskCategory">
+                                <option value="bug">🐛 Bug</option>
+                                <option value="quality">💎 Quality</option>
+                                <option value="test">🧪 Test</option>
+                                <option value="docs">📚 Docs</option>
+                                <option value="perf">⚡ Performance</option>
+                                <option value="security">🔒 Security</option>
+                                <option value="improvement">✨ Improvement</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Priority</label>
+                            <select id="taskPriority">
+                                <option value="high">🔴 High</option>
+                                <option value="medium" selected>🟡 Medium</option>
+                                <option value="low">🟢 Low</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Impact (1-10)</label>
+                            <input type="number" id="taskImpact" value="5" min="1" max="10">
+                        </div>
+                        <div class="form-group">
+                            <label>Effort (1-10)</label>
+                            <input type="number" id="taskEffort" value="5" min="1" max="10">
+                        </div>
+                        <div class="form-group">
+                            <label>Risk (1-10)</label>
+                            <input type="number" id="taskRisk" value="5" min="1" max="10">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeModal('addTaskModal')">Cancel</button>
+                    <button class="btn btn-primary" onclick="addTask()">Add Task</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Task Detail Modal -->
+        <div class="modal" id="taskDetailModal">
+            <div class="modal-content modal-lg">
+                <div class="modal-header">
+                    <h3 id="taskDetailTitle">Task Details</h3>
+                    <button class="modal-close" onclick="closeModal('taskDetailModal')">&times;</button>
+                </div>
+                <div class="modal-body" id="taskDetailBody">
+                    <!-- Task details will be inserted here -->
+                </div>
+                <div class="modal-footer" id="taskDetailFooter">
+                    <button class="btn btn-secondary" onclick="closeModal('taskDetailModal')">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Report Modal -->
+        <div class="modal" id="reportModal">
+            <div class="modal-content modal-lg">
+                <div class="modal-header">
+                    <h3>📊 Evolution Report</h3>
+                    <button class="modal-close" onclick="closeModal('reportModal')">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div id="reportContent" class="markdown-body">
+                        Loading report...
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeModal('reportModal')">Close</button>
+                    <button class="btn btn-primary" onclick="downloadReport()">📥 Download</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cron Setup Modal -->
+        <div class="modal" id="cronModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>⏰ Setup Scheduled Job</h3>
+                    <button class="modal-close" onclick="closeModal('cronModal')">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Project</label>
+                        <select id="cronProject">
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Run Interval (minutes)</label>
+                        <select id="cronInterval">
+                            <option value="15">Every 15 minutes</option>
+                            <option value="30" selected>Every 30 minutes</option>
+                            <option value="60">Every hour</option>
+                            <option value="120">Every 2 hours</option>
+                        </select>
+                    </div>
+                    <div class="cron-info">
+                        <p>⚠️ This will add a cron job to run evolution automatically.</p>
+                        <p>Logs: <code>/tmp/evolution-logs/PROJECT-cron.log</code></p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeModal('cronModal')">Cancel</button>
+                    <button class="btn btn-success" onclick="setupCronJob()">✓ Setup Job</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

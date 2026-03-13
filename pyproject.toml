@@ -1,0 +1,84 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "evolution-ui"
+version = "1.0.0"
+description = "Web interface for OpenClaw's self-evolution engine"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "OpenClaw Team", email = "team@openclaw.ai"}
+]
+maintainers = [
+    {name = "OpenClaw Team", email = "team@openclaw.ai"}
+]
+keywords = ["openclaw", "evolution", "self-evolution", "autonomous", "code-improvement"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Framework :: FastAPI",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence"
+]
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.104.0",
+    "uvicorn[standard]>=0.24.0",
+    "python-multipart>=0.0.6",
+    "aiofiles>=23.2.1",
+    "websockets>=12.0",
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+    "ruff>=0.1.0",
+    "black>=23.0.0",
+    "mypy>=1.0.0",
+    "httpx>=0.25.0"
+]
+
+[project.scripts]
+evolution-ui = "evolution_ui.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/YOUR_USERNAME/evolution-ui"
+Documentation = "https://docs.openclaw.ai/evolution-ui"
+Repository = "https://github.com/YOUR_USERNAME/evolution-ui"
+Issues = "https://github.com/YOUR_USERNAME/evolution-ui/issues"
+Changelog = "https://github.com/YOUR_USERNAME/evolution-ui/blob/main/CHANGELOG.md"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["evolution_ui*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
