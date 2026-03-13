@@ -831,7 +831,10 @@ async function startEvolution() {
 }
 
 function showStartEvolutionModal() {
-    if (!currentProject) return;
+    if (!currentProject) {
+        showNotification('Please select a project first', 'warning');
+        return;
+    }
     
     // Reset form
     document.getElementById('evolutionMode').value = 'autonomous';
