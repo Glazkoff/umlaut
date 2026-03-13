@@ -226,6 +226,9 @@ function renderProject(data) {
     
     // Metrics
     renderMetrics(metrics);
+    
+    // Branch status
+    refreshBranchStatus();
 }
 
 function renderCurrentActivity(state, tasks) {
@@ -549,6 +552,100 @@ function toggleDebugMode() {
         btn.className = debugMode ? 'btn btn-sm btn-warning' : 'btn btn-sm btn-secondary';
     }
     loadHistory();
+}
+
+// ============== Evolution Branch & PR Management ==============
+
+async function refreshBranchStatus() {
+    if (!currentProject) return;
+    
+    try {
+        const status = await apiCall('GET', `/api/projects/${currentProject}/evolution/branch-status`);
+        renderBranchStatus(status);
+    } catch (error) {
+        console.error('Failed to load branch status:', error);
+        document.getElementById('branchStatus').innerHTML = 
+            '<div class="error-message">Failed to load branch status</div>';
+    }
+}
+
+function renderBranchStatus(status) {
+    const container = document.getElementById('branchStatus');
+    const btnCreatePR = document.getElementById('btnCreatePR');
+    
+    if (!status.evolution_branch_exists) {
+        container.innerHTML = `
+            <div class="branch-info">
+                <span class="branch-name">🌿 evolution</span>
+                <span class="branch-status-text">Not created yet</span>
+            </div>
+            <div class="branch-detail">Branch will be created on first EXECUTE cycle</div>
+        `;
+        btnCreatePR.style.display = 'none';
+        return;
+    }
+    
+    let html = `
+        <div class="branch-info">
+            <span class="branch-name">🌿 evolution</span>
+            <span class="commits-ahead">${status.commits_ahead} commits ahead</span>
+        </div>
+    `;
+    
+    if (status.last_commit) {
+        html += `
+            <div class="last-commit">
+                <div class="commit-hash">${status.last_commit.hash}</div>
+                <div class="commit-message">${escapeHtml(status.last_commit.message || '').substring(0, 60)}</div>
+                <div class="commit-meta">${status.last_commit.author} • ${status.last_commit.date}</div>
+            </div>
+        `;
+    }
+    
+    if (status.commits_ahead > 0 && status.commit_list.length > 0) {
+        html += `<div class="commit-list">`;
+        status.commit_list.slice(0, 5).forEach(commit => {
+            html += `<div class="commit-item">${escapeHtml(commit)}</div>`;
+        });
+        if (status.commit_list.length > 5) {
+            html += `<div class="commit-more">+${status.commit_list.length - 5} more</div>`;
+        }
+        html += `</div>`;
+    }
+    
+    container.innerHTML = html;
+    
+    // Show/hide PR button
+    btnCreatePR.style.display = status.commits_ahead > 0 ? 'block' : 'none';
+}
+
+async function createEvolutionPR() {
+    if (!currentProject) return;
+    
+    const targetBranch = prompt('Target branch for PR:', 'main');
+    if (!targetBranch) return;
+    
+    const customTitle = prompt('PR title (leave empty for auto-generated):', '');
+    
+    try {
+        showNotification('Creating pull request...', 'info');
+        
+        const result = await apiCall('POST', 
+            `/api/projects/${currentProject}/evolution/create-pr?target_branch=${encodeURIComponent(targetBranch)}&pr_title=${encodeURIComponent(customTitle || '')}`
+        );
+        
+        showNotification(`PR created! ${result.pr_url}`, 'success');
+        
+        // Refresh branch status
+        refreshBranchStatus();
+        
+        // Open PR in new tab
+        if (confirm(`PR created successfully!\n\nOpen in browser?\n${result.pr_url}`)) {
+            window.open(result.pr_url, '_blank');
+        }
+    } catch (error) {
+        showNotification(`Failed to create PR: ${error.message}`, 'error');
+    }
 }
 
 // ============== Cron Management ==============

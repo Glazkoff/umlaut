@@ -1497,6 +1497,207 @@ async def get_evolution_logs(project_name: str, lines: int = 100):
         raise HTTPException(status_code=500, detail=f"Failed to read logs: {e}")
 
 
+# ============== Pull Request Management ==============
+
+@app.get("/api/projects/{project_name}/evolution/branch-status")
+async def get_evolution_branch_status(project_name: str):
+    """Get status of the evolution branch."""
+    repo_dir = REPOS_DIR / project_name
+    
+    if not repo_dir.exists():
+        raise HTTPException(status_code=404, detail="Repository not found")
+    
+    try:
+        # Get current branch
+        result = subprocess.run(
+            ["git", "branch", "--show-current"],
+            cwd=repo_dir, capture_output=True, text=True
+        )
+        current_branch = result.stdout.strip()
+        
+        # Check if evolution branch exists
+        result = subprocess.run(
+            ["git", "branch", "--list", "evolution"],
+            cwd=repo_dir, capture_output=True, text=True
+        )
+        evolution_branch_exists = bool(result.stdout.strip())
+        
+        # Get commits ahead of main
+        if evolution_branch_exists:
+            result = subprocess.run(
+                ["git", "log", "main..evolution", "--oneline"],
+                cwd=repo_dir, capture_output=True, text=True
+            )
+            commits_ahead = result.stdout.strip().split('\n') if result.stdout.strip() else []
+            commits_ahead = [c for c in commits_ahead if c]
+        else:
+            commits_ahead = []
+        
+        # Get files changed
+        if evolution_branch_exists and commits_ahead:
+            result = subprocess.run(
+                ["git", "diff", "main...evolution", "--stat"],
+                cwd=repo_dir, capture_output=True, text=True
+            )
+            diff_stat = result.stdout.strip()
+        else:
+            diff_stat = ""
+        
+        # Get last commit info
+        if evolution_branch_exists:
+            result = subprocess.run(
+                ["git", "log", "evolution", "-1", "--format=%H|%s|%an|%ad"],
+                cwd=repo_dir, capture_output=True, text=True
+            )
+            last_commit = result.stdout.strip().split('|') if result.stdout.strip() else None
+        else:
+            last_commit = None
+        
+        return {
+            "current_branch": current_branch,
+            "evolution_branch_exists": evolution_branch_exists,
+            "commits_ahead": len(commits_ahead),
+            "commit_list": commits_ahead,
+            "diff_stat": diff_stat,
+            "last_commit": {
+                "hash": last_commit[0][:7] if last_commit else None,
+                "message": last_commit[1] if last_commit else None,
+                "author": last_commit[2] if last_commit else None,
+                "date": last_commit[3] if last_commit else None
+            }
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Git error: {str(e)}")
+
+
+@app.post("/api/projects/{project_name}/evolution/create-pr")
+async def create_evolution_pr(project_name: str, target_branch: str = "main", pr_title: str = None):
+    """Create a PR from evolution branch to target branch."""
+    repo_dir = REPOS_DIR / project_name
+    
+    if not repo_dir.exists():
+        raise HTTPException(status_code=404, detail="Repository not found")
+    
+    try:
+        # Check if evolution branch exists
+        result = subprocess.run(
+            ["git", "branch", "--list", "evolution"],
+            cwd=repo_dir, capture_output=True, text=True
+        )
+        if not result.stdout.strip():
+            raise HTTPException(status_code=400, detail="Evolution branch does not exist")
+        
+        # Get commits for PR description
+        result = subprocess.run(
+            ["git", "log", f"{target_branch}..evolution", "--oneline"],
+            cwd=repo_dir, capture_output=True, text=True
+        )
+        commits = result.stdout.strip().split('\n') if result.stdout.strip() else []
+        commits = [c for c in commits if c]
+        
+        if not commits:
+            raise HTTPException(status_code=400, detail="No commits to create PR for")
+        
+        # Load task info from STATE.json
+        state = load_json(project_name, "STATE.json")
+        
+        # Build PR description
+        pr_body = f"""## Evolution Changes
+
+**Cycle:** {state.get('cycle', 'unknown')}
+**Tasks Completed:** {len(commits)} commits
+
+### Commits
+"""
+        for commit in commits:
+            pr_body += f"- {commit}\n"
+        
+        pr_body += f"""
+
+### Metrics
+- **Test Coverage:** {state.get('review_details', {}).get('coverage_pct', 'N/A')}%
+- **Tests Passing:** {state.get('review_details', {}).get('tests_passing', 'N/A')}
+- **Lint Errors:** {state.get('review_details', {}).get('lint_errors', 'N/A')}
+
+### Tasks Completed in This Evolution
+"""
+        # Add task info
+        tasks = load_json(project_name, "TASKS.json")
+        for task in tasks.get("done", [])[-10:]:  # Last 10 tasks
+            pr_body += f"- **{task.get('id', 'unknown')}:** {task.get('title', 'N/A')}\n"
+        
+        pr_body += """
+
+---
+*This PR was generated by Ümlaut Evolution Engine* 🚀
+"""
+        
+        # Generate PR title if not provided
+        if not pr_title:
+            pr_title = f"🚀 Evolution Cycle {state.get('cycle', 'unknown')} - {len(commits)} tasks completed"
+        
+        # Create PR using gh CLI
+        result = subprocess.run(
+            ["gh", "pr", "create", 
+             "--base", target_branch,
+             "--head", "evolution",
+             "--title", pr_title,
+             "--body", pr_body],
+            cwd=repo_dir, capture_output=True, text=True
+        )
+        
+        if result.returncode != 0:
+            raise HTTPException(status_code=500, detail=f"Failed to create PR: {result.stderr}")
+        
+        pr_url = result.stdout.strip()
+        
+        # Update STATE with PR info
+        state["last_pr_url"] = pr_url
+        state["last_pr_created"] = datetime.utcnow().isoformat() + "Z"
+        save_json(project_name, "STATE.json", state)
+        
+        await manager.broadcast({
+            "type": "pr_created",
+            "project": project_name,
+            "pr_url": pr_url
+        })
+        
+        return {
+            "status": "created",
+            "pr_url": pr_url,
+            "title": pr_title,
+            "commits": len(commits)
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to create PR: {str(e)}")
+
+
+@app.get("/api/projects/{project_name}/evolution/prs")
+async def list_evolution_prs(project_name: str, limit: int = 10):
+    """List PRs created from evolution branch."""
+    repo_dir = REPOS_DIR / project_name
+    
+    if not repo_dir.exists():
+        raise HTTPException(status_code=404, detail="Repository not found")
+    
+    try:
+        result = subprocess.run(
+            ["gh", "pr", "list", "--head", "evolution", "--limit", str(limit), "--json", 
+             "number,title,url,state,createdAt,mergedAt,commits"],
+            cwd=repo_dir, capture_output=True, text=True
+        )
+        
+        if result.returncode != 0:
+            return {"prs": []}
+        
+        prs = json.loads(result.stdout)
+        return {"prs": prs}
+    except Exception as e:
+        return {"prs": [], "error": str(e)}
+
+
 # ============== Static Files ==============
 
 @app.get("/", response_class=HTMLResponse)

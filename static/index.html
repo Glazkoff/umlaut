@@ -160,6 +160,20 @@
                                 🔄 Rollback Everything
                             </button>
                         </div>
+                        
+                        <!-- Evolution Branch Status -->
+                        <div class="evolution-branch-section" id="evolutionBranchSection" style="margin-top: 16px;">
+                            <div class="section-header">
+                                <h4>🌿 Evolution Branch</h4>
+                                <button onclick="refreshBranchStatus()" class="btn btn-sm btn-secondary">🔄</button>
+                            </div>
+                            <div id="branchStatus" class="branch-status">
+                                <div class="loading">Loading...</div>
+                            </div>
+                            <button onclick="createEvolutionPR()" class="btn btn-success btn-block" id="btnCreatePR" style="margin-top: 8px; display: none;">
+                                🔀 Create Pull Request
+                            </button>
+                        </div>
                     </div>
                 </div>
 
