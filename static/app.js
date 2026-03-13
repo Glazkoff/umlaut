@@ -1,4 +1,4 @@
-// Evolution UI - JavaScript
+// Umlaut - JavaScript
 
 const API_BASE = '';
 let ws = null;

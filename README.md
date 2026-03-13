@@ -1,8 +1,8 @@
-# Evolution UI - OpenClaw Self-Evolution Engine Web Interface
+# Umlaut - OpenClaw Self-Evolution Engine Web Interface
 
 <div align="center">
 
-![Evolution UI](https://img.shields.io/badge/Evolution-UI-blue?style=for-the-badge)
+![Umlaut](https://img.shields.io/badge/Umlaut-Engine-purple?style=for-the-badge)
 ![OpenClaw](https://img.shields.io/badge/OpenClaw-Skill-green?style=for-the-badge)
 ![Python](https://img.shields.io/badge/Python-3.11+-yellow?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-MIT-red?style=for-the-badge)
@@ -17,7 +17,7 @@
 
 ## 📖 Overview
 
-Evolution UI provides a real-time, interactive dashboard for managing autonomous code evolution in OpenClaw projects. Monitor progress, configure thinking levels, manage tasks, and control the evolution lifecycle through an intuitive web interface.
+Umlaut provides a real-time, interactive dashboard for managing autonomous code evolution in OpenClaw projects. Monitor progress, configure thinking levels, manage tasks, and control the evolution lifecycle through an intuitive web interface.
 
 ### What is Self-Evolution?
 
@@ -27,7 +27,7 @@ OpenClaw's self-evolution engine autonomously improves codebases by:
 - **Executing** code changes with automated testing
 - **Reviewing** results and learning from outcomes
 
-Evolution UI makes this process **visible** and **controllable**.
+Umlaut makes this process **visible** and **controllable**.
 
 ---
 
@@ -84,18 +84,18 @@ Evolution UI makes this process **visible** and **controllable**.
 
 ```bash
 # Install as OpenClaw skill
-openclaw skill install https://github.com/Glazkoff/evolution-ui
+openclaw skill install https://github.com/Glazkoff/umlaut
 
 # Or with curl
-curl -fsSL https://raw.githubusercontent.com/Glazkoff/evolution-ui/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Glazkoff/umlaut/main/scripts/install.sh | bash
 ```
 
 ### Option 2: Manual Installation
 
 ```bash
 # Clone repository
-git clone https://github.com/Glazkoff/evolution-ui.git
-cd evolution-ui
+git clone https://github.com/Glazkoff/umlaut.git
+cd umlaut
 
 # Create virtual environment
 python -m venv .venv
@@ -112,14 +112,14 @@ uvicorn main:app --host 0.0.0.0 --port 8080
 
 ```bash
 # Pull image
-docker pull Glazkoff/evolution-ui:latest
+docker pull Glazkoff/umlaut:latest
 
 # Run container
 docker run -d \
   -p 8080:8080 \
   -v ~/.openclaw:/root/.openclaw \
-  --name evolution-ui \
-  Glazkoff/evolution-ui:latest
+  --name umlaut \
+  Glazkoff/umlaut:latest
 ```
 
 ### Option 4: Systemd Service
@@ -129,22 +129,22 @@ docker run -d \
 sudo ./scripts/install-service.sh
 
 # Start service
-sudo systemctl start evolution-ui
-sudo systemctl enable evolution-ui
+sudo systemctl start umlaut
+sudo systemctl enable umlaut
 ```
 
 ---
 
 ## 🚀 Quick Start
 
-### 1. Start Evolution UI
+### 1. Start Umlaut
 
 ```bash
 # If installed as skill
-evolution-ui start
+umlaut start
 
 # Or manually
-cd evolution-ui
+cd umlaut
 source .venv/bin/activate
 uvicorn main:app --host 127.0.0.1 --port 8080
 ```
@@ -207,7 +207,7 @@ curl -X POST http://localhost:8080/api/projects/my-project/start
 ### Architecture
 
 ```
-evolution-ui/
+umlaut/
 ├── main.py                    # FastAPI backend
 ├── static/
 │   ├── index.html            # Main HTML
@@ -400,9 +400,9 @@ ws.onmessage = (event) => {
 
 ```bash
 # Server configuration
-export EVOLUTION_UI_HOST=0.0.0.0
-export EVOLUTION_UI_PORT=8080
-export EVOLUTION_UI_DEBUG=false
+export UMLAUT_HOST=0.0.0.0
+export UMLAUT_PORT=8080
+export UMLAUT_DEBUG=false
 
 # OpenClaw paths
 export OPENCLAW_WORKSPACE=~/.openclaw/workspace
@@ -410,7 +410,7 @@ export EVOLUTION_DIR=~/.openclaw/workspace/evolution
 
 # Logging
 export LOG_LEVEL=INFO
-export LOG_FILE=/var/log/evolution-ui.log
+export LOG_FILE=/var/log/umlaut.log
 ```
 
 ### Nginx Configuration
@@ -446,15 +446,15 @@ server {
 
 ```ini
 [Unit]
-Description=Evolution UI - OpenClaw Self-Evolution Engine
+Description=Umlaut - OpenClaw Self-Evolution Engine
 After=network.target
 
 [Service]
 Type=simple
 User=openclaw
-WorkingDirectory=/opt/evolution-ui
-Environment="PATH=/opt/evolution-ui/.venv/bin"
-ExecStart=/opt/evolution-ui/.venv/bin/uvicorn main:app --host 127.0.0.1 --port 8080
+WorkingDirectory=/opt/umlaut
+Environment="PATH=/opt/umlaut/.venv/bin"
+ExecStart=/opt/umlaut/.venv/bin/uvicorn main:app --host 127.0.0.1 --port 8080
 Restart=always
 RestartSec=10
 
@@ -515,7 +515,7 @@ export LOG_LEVEL=DEBUG
 uvicorn main:app --host 127.0.0.1 --port 8080 --reload
 
 # Check logs in real-time
-tail -f /tmp/evolution-ui.log
+tail -f /tmp/umlaut.log
 ```
 
 ---
@@ -528,8 +528,8 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for deta
 
 ```bash
 # Clone repository
-git clone https://github.com/Glazkoff/evolution-ui.git
-cd evolution-ui
+git clone https://github.com/Glazkoff/umlaut.git
+cd umlaut
 
 # Create virtual environment
 python -m venv .venv
@@ -566,8 +566,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-- **Documentation**: [docs.openclaw.ai/evolution-ui](https://docs.openclaw.ai/evolution-ui)
-- **Issues**: [GitHub Issues](https://github.com/Glazkoff/evolution-ui/issues)
+- **Documentation**: [docs.openclaw.ai/umlaut](https://docs.openclaw.ai/umlaut)
+- **Issues**: [GitHub Issues](https://github.com/Glazkoff/umlaut/issues)
 - **Discord**: [OpenClaw Community](https://discord.gg/clawd)
 - **Email**: support@openclaw.ai
 
@@ -577,6 +577,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Made with ❤️ by the OpenClaw Team**
 
-[⬆ Back to Top](#evolution-ui---openclaw-self-evolution-engine-web-interface)
+[⬆ Back to Top](#umlaut---openclaw-self-evolution-engine-web-interface)
 
 </div>

@@ -51,7 +51,7 @@ check_openclaw() {
 
 # Install Evolution UI
 install() {
-    local INSTALL_DIR="${1:-$HOME/.openclaw/workspace/evolution-ui}"
+    local INSTALL_DIR="${1:-$HOME/.openclaw/workspace/umlaut}"
     
     log_info "Installing Evolution UI to $INSTALL_DIR"
     
@@ -73,7 +73,7 @@ install() {
     # Clone or download
     if command -v git &> /dev/null; then
         log_info "Cloning from GitHub..."
-        git clone https://github.com/YOUR_USERNAME/evolution-ui.git . 2>/dev/null || {
+        git clone https://github.com/YOUR_USERNAME/umlaut.git . 2>/dev/null || {
             log_warning "Repository already exists, pulling latest..."
             git pull
         }
@@ -130,24 +130,24 @@ install() {
     echo ""
     echo "Usage:"
     echo "  Start server:  cd $INSTALL_DIR && source .venv/bin/activate && uvicorn main:app --host 127.0.0.1 --port 8080"
-    echo "  Or:            evolution-ui start"
+    echo "  Or:            umlaut start"
     echo ""
     echo "  Access UI:     http://localhost:8080"
     echo "  API docs:      http://localhost:8080/docs"
     echo ""
     echo "Configuration:"
     echo "  Edit config:   $INSTALL_DIR/.env"
-    echo "  View logs:     tail -f /tmp/evolution-ui.log"
+    echo "  View logs:     tail -f /tmp/umlaut.log"
     echo ""
     echo "Documentation:"
     echo "  README:        $INSTALL_DIR/README.md"
-    echo "  API docs:      https://docs.openclaw.ai/evolution-ui"
+    echo "  API docs:      https://docs.openclaw.ai/umlaut"
     echo ""
 }
 
 # Uninstall Evolution UI
 uninstall() {
-    local INSTALL_DIR="${1:-$HOME/.openclaw/workspace/evolution-ui}"
+    local INSTALL_DIR="${1:-$HOME/.openclaw/workspace/umlaut}"
     
     log_warning "This will remove Evolution UI from $INSTALL_DIR"
     read -p "Continue? (y/N) " -n 1 -r
@@ -164,14 +164,14 @@ uninstall() {
     rm -rf "$INSTALL_DIR"
     
     log_info "Unregistering skill..."
-    openclaw skill unregister evolution-ui 2>/dev/null || true
+    openclaw skill unregister umlaut 2>/dev/null || true
     
     log_success "Evolution UI uninstalled"
 }
 
 # Update Evolution UI
 update() {
-    local INSTALL_DIR="${1:-$HOME/.openclaw/workspace/evolution-ui}"
+    local INSTALL_DIR="${1:-$HOME/.openclaw/workspace/umlaut}"
     
     if [ ! -d "$INSTALL_DIR" ]; then
         log_error "Evolution UI not found at $INSTALL_DIR"
@@ -195,7 +195,7 @@ update() {
         log_info "Restarting server..."
         pkill -f "uvicorn main:app"
         sleep 2
-        nohup .venv/bin/uvicorn main:app --host 127.0.0.1 --port 8080 > /tmp/evolution-ui.log 2>&1 &
+        nohup .venv/bin/uvicorn main:app --host 127.0.0.1 --port 8080 > /tmp/umlaut.log 2>&1 &
         log_success "Server restarted"
     fi
 }
@@ -203,7 +203,7 @@ update() {
 # Main
 main() {
     local ACTION="${1:-install}"
-    local INSTALL_DIR="$HOME/.openclaw/workspace/evolution-ui"
+    local INSTALL_DIR="$HOME/.openclaw/workspace/umlaut"
     
     case "$ACTION" in
         install)
@@ -221,8 +221,8 @@ main() {
             echo "Usage: $0 {install|uninstall|update} [directory]"
             echo ""
             echo "Examples:"
-            echo "  $0 install                    # Install to ~/.openclaw/workspace/evolution-ui"
-            echo "  $0 install /opt/evolution-ui  # Install to custom directory"
+            echo "  $0 install                    # Install to ~/.openclaw/workspace/umlaut"
+            echo "  $0 install /opt/umlaut  # Install to custom directory"
             echo "  $0 uninstall                  # Remove Evolution UI"
             echo "  $0 update                     # Update to latest version"
             exit 1

@@ -1,10 +1,10 @@
 {
-  "name": "evolution-ui",
+  "name": "umlaut",
   "version": "1.0.0",
   "description": "Web interface for monitoring and controlling OpenClaw's self-evolution engine",
   "author": "OpenClaw Team",
   "license": "MIT",
-  "repository": "https://github.com/Glazkoff/evolution-ui",
+  "repository": "https://github.com/Glazkoff/umlaut",
   "keywords": [
     "openclaw",
     "evolution",
@@ -24,29 +24,29 @@
   },
   "install": {
     "command": "bash scripts/install.sh",
-    "post_install": "evolution-ui init"
+    "post_install": "umlaut init"
   },
   "commands": {
     "start": {
-      "description": "Start Evolution UI server",
+      "description": "Start Umlaut server",
       "command": "uvicorn main:app --host 127.0.0.1 --port 8080",
       "aliases": ["ui", "dashboard"]
     },
     "stop": {
-      "description": "Stop Evolution UI server",
+      "description": "Stop Umlaut server",
       "command": "pkill -f 'uvicorn main:app --port 8080'"
     },
     "restart": {
-      "description": "Restart Evolution UI server",
+      "description": "Restart Umlaut server",
       "command": "bash -c 'pkill -f uvicorn && sleep 2 && uvicorn main:app --host 127.0.0.1 --port 8080'"
     },
     "status": {
-      "description": "Check Evolution UI status",
+      "description": "Check Umlaut status",
       "command": "curl -s http://localhost:8080/api/system/status | jq ."
     },
     "logs": {
-      "description": "View Evolution UI logs",
-      "command": "tail -f /tmp/evolution-ui.log"
+      "description": "View Umlaut logs",
+      "command": "tail -f /tmp/umlaut.log"
     }
   },
   "endpoints": {
@@ -55,15 +55,15 @@
     "websocket": "ws://localhost:8080/ws"
   },
   "environment_variables": {
-    "EVOLUTION_UI_HOST": {
+    "UMLAUT_HOST": {
       "description": "Host to bind server",
       "default": "127.0.0.1"
     },
-    "EVOLUTION_UI_PORT": {
+    "UMLAUT_PORT": {
       "description": "Port to bind server",
       "default": "8080"
     },
-    "EVOLUTION_UI_DEBUG": {
+    "UMLAUT_DEBUG": {
       "description": "Enable debug mode",
       "default": "false"
     },
@@ -92,8 +92,8 @@
   },
   "examples": [
     {
-      "title": "Start Evolution UI",
-      "command": "evolution-ui start",
+      "title": "Start Umlaut",
+      "command": "umlaut start",
       "description": "Start the web interface on http://localhost:8080"
     },
     {
@@ -122,19 +122,19 @@
     }
   ],
   "documentation": {
-    "readme": "https://github.com/Glazkoff/evolution-ui/blob/main/README.md",
-    "api": "https://github.com/Glazkoff/evolution-ui/blob/main/docs/API.md",
-    "examples": "https://github.com/Glazkoff/evolution-ui/tree/main/examples"
+    "readme": "https://github.com/Glazkoff/umlaut/blob/main/README.md",
+    "api": "https://github.com/Glazkoff/umlaut/blob/main/docs/API.md",
+    "examples": "https://github.com/Glazkoff/umlaut/tree/main/examples"
   },
   "support": {
-    "issues": "https://github.com/Glazkoff/evolution-ui/issues",
+    "issues": "https://github.com/Glazkoff/umlaut/issues",
     "discord": "https://discord.gg/clawd",
     "email": "support@openclaw.ai"
   },
-  "changelog": "https://github.com/Glazkoff/evolution-ui/blob/main/CHANGELOG.md",
+  "changelog": "https://github.com/Glazkoff/umlaut/blob/main/CHANGELOG.md",
   "icon": "🧬",
   "screenshots": [
-    "https://github.com/Glazkoff/evolution-ui/raw/main/docs/screenshots/dashboard.png",
-    "https://github.com/Glazkoff/evolution-ui/raw/main/docs/screenshots/thinking-config.png"
+    "https://github.com/Glazkoff/umlaut/raw/main/docs/screenshots/dashboard.png",
+    "https://github.com/Glazkoff/umlaut/raw/main/docs/screenshots/thinking-config.png"
   ]
 }
