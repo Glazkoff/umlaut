@@ -31,47 +31,24 @@ uvicorn main:app --host 127.0.0.1 --port 8080
 
 Access: http://localhost:8080
 
-## Systemd (Linux)
+## Update
 
 ```bash
-# Install as service
-sudo cp ~/.openclaw/workspace/umlaut/umlaut.service /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable umlaut
-sudo systemctl start umlaut
-
-# Commands
-sudo systemctl status umlaut
-sudo systemctl restart umlaut
-journalctl -u umlaut -f
+cd ~/.openclaw/workspace/umlaut
+./install.sh update
 ```
 
-## Features
+Or one-liner:
+```bash
+curl -fsSL https://raw.githubusercontent.com/Glazkoff/umlaut/main/install.sh | bash -s -- update
+```
 
-- **Dashboard**: Real-time evolution monitoring
-- **Projects**: Create and manage evolution projects
-- **Thinking Levels**: Configure per-phase thinking (LOW/MEDIUM/HIGH)
-- **Logs**: View evolution execution logs
-- **API**: REST API + WebSocket for real-time updates
+## Commands
 
-## Requirements
-
-- Python 3.10+
-- uv or pip
-
-## Environment
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `UMLAUT_HOST` | `127.0.0.1` | Server host |
-| `UMLAUT_PORT` | `8080` | Server port |
-| `UMLAUT_DEBUG` | `false` | Debug mode |
-| `LOG_LEVEL` | `INFO` | Logging level |
-
-## When to Use
-
-- Monitor evolution progress visually
-- Configure thinking levels per phase
-- Manage multiple evolution projects
-- Debug evolution execution
-- View real-time logs and metrics
+| Command | Description |
+|---------|-------------|
+| `./install.sh install` | Install Umlaut |
+| `./install.sh update` | Update existing installation |
+| `./install.sh restart` | Restart systemd service |
+| `./install.sh status` | Check installation status |
+| `./install.sh logs` | View service logs |
