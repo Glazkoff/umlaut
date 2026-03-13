@@ -80,38 +80,38 @@ Umlaut makes this process **visible** and **controllable**.
 
 ## 📦 Installation
 
-### Option 1: One-Command Install (Recommended)
+### Option 1: One-Line Install (Recommended)
 
 ```bash
-# Clone and install
-git clone https://github.com/Glazkoff/umlaut.git ~/.openclaw/workspace/umlaut
-cd ~/.openclaw/workspace/umlaut
-uv sync  # or: python -m venv .venv && pip install -r requirements.txt
+curl -fsSL https://raw.githubusercontent.com/Glazkoff/umlaut/main/install.sh | bash
 ```
 
-### Option 2: Manual Installation
+Or with custom directory:
 
 ```bash
-# Clone repository
-git clone https://github.com/Glazkoff/umlaut.git
-cd umlaut
+curl -fsSL https://raw.githubusercontent.com/Glazkoff/umlaut/main/install.sh | bash -s /path/to/umlaut
+```
+
+### Option 2: Manual Install
+
+```bash
+# Clone to workspace
+git clone https://github.com/Glazkoff/umlaut.git ~/.openclaw/workspace/umlaut
+cd ~/.openclaw/workspace/umlaut
 
 # Install dependencies with uv (recommended)
 uv sync
 
 # Or with pip
-python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
 ### Option 3: Systemd Service (Linux)
 
 ```bash
-# Copy service file
-sudo cp umlaut.service /etc/systemd/system/
-
-# Enable and start
+# After installation, enable as service:
+sudo cp ~/.openclaw/workspace/umlaut/umlaut.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable umlaut
 sudo systemctl start umlaut
@@ -120,15 +120,9 @@ sudo systemctl start umlaut
 ### Option 4: Docker
 
 ```bash
-# Build image
-docker build -t umlaut .
-
-# Run container
-docker run -d \
-  -p 8080:8080 \
-  -v ~/.openclaw:/root/.openclaw \
-  --name umlaut \
-  umlaut:latest
+# Build and run
+docker build -t umlaut https://github.com/Glazkoff/umlaut.git
+docker run -d -p 8080:8080 -v ~/.openclaw:/root/.openclaw --name umlaut umlaut
 ```
 
 ---

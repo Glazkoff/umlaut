@@ -10,16 +10,13 @@ Web UI for OpenClaw's self-evolution engine. Monitor, configure, and control evo
 ## Install
 
 ```bash
-# Clone to workspace
+# One-line install
+curl -fsSL https://raw.githubusercontent.com/Glazkoff/umlaut/main/install.sh | bash
+
+# Or manually
 git clone https://github.com/Glazkoff/umlaut.git ~/.openclaw/workspace/umlaut
 cd ~/.openclaw/workspace/umlaut
-
-# Install dependencies (uv recommended)
-uv sync
-
-# Or with pip
-python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
+uv sync  # or: pip install -r requirements.txt
 ```
 
 ## Start

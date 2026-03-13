@@ -1,43 +1,56 @@
 #!/bin/bash
-# Install Evolution UI as a systemd service
+# Umlaut - One-line installer
+# Usage: curl -fsSL https://raw.githubusercontent.com/Glazkoff/umlaut/main/install.sh | bash
 
 set -e
 
-SERVICE_DIR="/root/.openclaw/workspace/evolution-ui"
-SERVICE_FILE="/etc/systemd/system/evolution-ui.service"
+INSTALL_DIR="${1:-$HOME/.openclaw/workspace/umlaut}"
 
-echo "🧬 Installing Evolution UI..."
+echo "🧬 Installing Umlaut to $INSTALL_DIR"
 
-# Install Python dependencies
-echo "📦 Installing Python dependencies..."
-cd "$SERVICE_DIR"
-pip3 install -q fastapi uvicorn websockets pydantic python-multipart
-
-# Copy service file
-echo "📋 Installing systemd service..."
-cp "$SERVICE_DIR/evolution-ui.service" "$SERVICE_FILE"
-
-# Reload systemd
-systemctl daemon-reload
-
-# Enable and start service
-echo "🚀 Starting Evolution UI..."
-systemctl enable evolution-ui
-systemctl restart evolution-ui
-
-# Check status
-sleep 2
-if systemctl is-active --quiet evolution-ui; then
-    echo "✅ Evolution UI is running!"
-    echo ""
-    echo "📍 Access the UI at: http://localhost:8080"
-    echo ""
-    echo "Commands:"
-    echo "  Status:  systemctl status evolution-ui"
-    echo "  Logs:    journalctl -u evolution-ui -f"
-    echo "  Restart: systemctl restart evolution-ui"
-    echo "  Stop:    systemctl stop evolution-ui"
-else
-    echo "❌ Evolution UI failed to start. Check logs:"
-    echo "  journalctl -u evolution-ui -n 50"
+# Check Python
+if ! command -v python3 &> /dev/null; then
+    echo "❌ Python 3 not found. Install Python 3.10+ first."
+    exit 1
 fi
+
+# Clone or update
+if [ -d "$INSTALL_DIR/.git" ]; then
+    echo "📦 Updating existing installation..."
+    cd "$INSTALL_DIR"
+    git pull
+else
+    echo "📦 Cloning repository..."
+    rm -rf "$INSTALL_DIR"
+    git clone https://github.com/Glazkoff/umlaut.git "$INSTALL_DIR"
+    cd "$INSTALL_DIR"
+fi
+
+# Install dependencies
+if command -v uv &> /dev/null; then
+    echo "📦 Installing dependencies with uv..."
+    uv sync
+else
+    echo "📦 Installing dependencies with pip..."
+    python3 -m venv .venv
+    source .venv/bin/activate
+    pip install --upgrade pip -q
+    pip install -r requirements.txt -q
+fi
+
+# Create directories
+mkdir -p "$HOME/.openclaw/workspace/evolution"
+mkdir -p "$HOME/.openclaw/workspace/repos"
+
+echo ""
+echo "✅ Umlaut installed!"
+echo ""
+echo "Start:"
+echo "  cd $INSTALL_DIR"
+if command -v uv &> /dev/null; then
+    echo "  uv run uvicorn main:app --host 127.0.0.1 --port 8080"
+else
+    echo "  source .venv/bin/activate && uvicorn main:app --host 127.0.0.1 --port 8080"
+fi
+echo ""
+echo "Access: http://localhost:8080"
