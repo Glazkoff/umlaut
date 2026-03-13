@@ -1242,6 +1242,211 @@ async def force_evolution_cycle(project_name: str):
     }
 
 
+# ============== Ralph Loop Evolution ==============
+
+import subprocess
+import signal
+
+# Track running evolution processes
+EVOLUTION_PROCESSES: Dict[str, subprocess.Popen] = {}
+
+
+@app.post("/api/projects/{project_name}/evolution/start")
+async def start_evolution(project_name: str, budget: float = 50.0, max_cycles: int = 100):
+    """Start Ralph Loop evolution for a project."""
+    global EVOLUTION_PROCESSES
+    
+    project_dir = get_project_dir(project_name)
+    if not project_dir.exists():
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    # Check if already running
+    if project_name in EVOLUTION_PROCESSES:
+        proc = EVOLUTION_PROCESSES[project_name]
+        if proc.poll() is None:  # Still running
+            return {
+                "status": "already_running",
+                "pid": proc.pid,
+                "message": "Evolution already running for this project"
+            }
+    
+    # Start evolution runner
+    script_path = Path(__file__).parent / "scripts" / "run-evolution.sh"
+    if not script_path.exists():
+        raise HTTPException(status_code=500, detail="Evolution runner script not found")
+    
+    log_file = project_dir / "evolution.log"
+    
+    with open(log_file, "w") as log:
+        proc = subprocess.Popen(
+            ["bash", str(script_path), project_name, "--budget", str(budget), "--max-cycles", str(max_cycles)],
+            stdout=log,
+            stderr=subprocess.STDOUT,
+            start_new_session=True,
+            env={**os.environ, "BUDGET": str(budget), "MAX_CYCLES": str(max_cycles)}
+        )
+    
+    EVOLUTION_PROCESSES[project_name] = proc
+    
+    # Update state
+    state = load_json(project_name, "STATE.json")
+    state["phase"] = "RUNNING"
+    state["started_at"] = datetime.utcnow().isoformat() + "Z"
+    save_json(project_name, "STATE.json", state)
+    
+    # Broadcast
+    await manager.broadcast({
+        "type": "evolution_started",
+        "project": project_name,
+        "pid": proc.pid,
+        "budget": budget,
+        "max_cycles": max_cycles
+    })
+    
+    return {
+        "status": "started",
+        "pid": proc.pid,
+        "budget": budget,
+        "max_cycles": max_cycles,
+        "log_file": str(log_file),
+        "message": "Evolution started. Monitor via /api/projects/{project}/evolution/status"
+    }
+
+
+@app.post("/api/projects/{project_name}/evolution/stop")
+async def stop_evolution(project_name: str):
+    """Stop running evolution."""
+    global EVOLUTION_PROCESSES
+    
+    if project_name not in EVOLUTION_PROCESSES:
+        return {"status": "not_running", "message": "No evolution running for this project"}
+    
+    proc = EVOLUTION_PROCESSES[project_name]
+    
+    if proc.poll() is not None:
+        # Already stopped
+        del EVOLUTION_PROCESSES[project_name]
+        return {"status": "already_stopped", "message": "Evolution already stopped"}
+    
+    # Send SIGTERM
+    os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+    
+    try:
+        proc.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        # Force kill
+        os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+        proc.wait()
+    
+    del EVOLUTION_PROCESSES[project_name]
+    
+    # Update state
+    state = load_json(project_name, "STATE.json")
+    state["phase"] = "PAUSED"
+    save_json(project_name, "STATE.json", state)
+    
+    await manager.broadcast({
+        "type": "evolution_stopped",
+        "project": project_name
+    })
+    
+    return {"status": "stopped", "message": "Evolution stopped"}
+
+
+@app.get("/api/projects/{project_name}/evolution/status")
+async def get_evolution_status(project_name: str):
+    """Get evolution status."""
+    global EVOLUTION_PROCESSES
+    
+    project_dir = get_project_dir(project_name)
+    
+    # Check process
+    running = False
+    pid = None
+    if project_name in EVOLUTION_PROCESSES:
+        proc = EVOLUTION_PROCESSES[project_name]
+        if proc.poll() is None:
+            running = True
+            pid = proc.pid
+    
+    # Load state
+    try:
+        state = load_json(project_name, "STATE.json")
+    except HTTPException:
+        state = {"phase": "IDLE", "cycle": 0}
+    
+    # Get task counts
+    try:
+        prd = load_json(project_name, "prd.json")
+        total_stories = len(prd.get("userStories", []))
+        completed_stories = len([s for s in prd.get("userStories", []) if s.get("passes", False)])
+    except HTTPException:
+        total_stories = 0
+        completed_stories = 0
+    
+    try:
+        tasks = load_json(project_name, "TASKS.json")
+        backlog = len(tasks.get("backlog", []))
+        done = len(tasks.get("done", []))
+    except HTTPException:
+        backlog = 0
+        done = 0
+    
+    # Get log tail
+    log_file = project_dir / "evolution.log"
+    log_tail = ""
+    if log_file.exists():
+        try:
+            log_tail = subprocess.run(
+                ["tail", "-20", str(log_file)],
+                capture_output=True,
+                text=True,
+                timeout=5
+            ).stdout
+        except:
+            pass
+    
+    return {
+        "running": running,
+        "pid": pid,
+        "phase": state.get("phase", "IDLE"),
+        "cycle": state.get("cycle", 0),
+        "budget": state.get("budget", {}),
+        "progress": {
+            "prd": {
+                "total": total_stories,
+                "completed": completed_stories,
+                "remaining": total_stories - completed_stories
+            },
+            "tasks": {
+                "backlog": backlog,
+                "done": done
+            }
+        },
+        "log_tail": log_tail
+    }
+
+
+@app.get("/api/projects/{project_name}/evolution/logs")
+async def get_evolution_logs(project_name: str, lines: int = 100):
+    """Get evolution logs."""
+    log_file = get_project_dir(project_name) / "evolution.log"
+    
+    if not log_file.exists():
+        return {"logs": "", "message": "No logs yet"}
+    
+    try:
+        result = subprocess.run(
+            ["tail", f"-{lines}", str(log_file)],
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+        return {"logs": result.stdout, "lines": lines}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to read logs: {e}")
+
+
 # ============== Static Files ==============
 
 @app.get("/", response_class=HTMLResponse)
