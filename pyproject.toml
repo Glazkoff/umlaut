@@ -52,11 +52,11 @@ dev = [
 evolution-ui = "evolution_ui.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/YOUR_USERNAME/evolution-ui"
+Homepage = "https://github.com/Glazkoff/evolution-ui"
 Documentation = "https://docs.openclaw.ai/evolution-ui"
-Repository = "https://github.com/YOUR_USERNAME/evolution-ui"
-Issues = "https://github.com/YOUR_USERNAME/evolution-ui/issues"
-Changelog = "https://github.com/YOUR_USERNAME/evolution-ui/blob/main/CHANGELOG.md"
+Repository = "https://github.com/Glazkoff/evolution-ui"
+Issues = "https://github.com/Glazkoff/evolution-ui/issues"
+Changelog = "https://github.com/Glazkoff/evolution-ui/blob/main/CHANGELOG.md"
 
 [tool.setuptools.packages.find]
 where = ["."]

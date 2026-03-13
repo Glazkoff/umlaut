@@ -4,7 +4,7 @@
   "description": "Web interface for monitoring and controlling OpenClaw's self-evolution engine",
   "author": "OpenClaw Team",
   "license": "MIT",
-  "repository": "https://github.com/YOUR_USERNAME/evolution-ui",
+  "repository": "https://github.com/Glazkoff/evolution-ui",
   "keywords": [
     "openclaw",
     "evolution",
@@ -122,19 +122,19 @@
     }
   ],
   "documentation": {
-    "readme": "https://github.com/YOUR_USERNAME/evolution-ui/blob/main/README.md",
-    "api": "https://github.com/YOUR_USERNAME/evolution-ui/blob/main/docs/API.md",
-    "examples": "https://github.com/YOUR_USERNAME/evolution-ui/tree/main/examples"
+    "readme": "https://github.com/Glazkoff/evolution-ui/blob/main/README.md",
+    "api": "https://github.com/Glazkoff/evolution-ui/blob/main/docs/API.md",
+    "examples": "https://github.com/Glazkoff/evolution-ui/tree/main/examples"
   },
   "support": {
-    "issues": "https://github.com/YOUR_USERNAME/evolution-ui/issues",
+    "issues": "https://github.com/Glazkoff/evolution-ui/issues",
     "discord": "https://discord.gg/clawd",
     "email": "support@openclaw.ai"
   },
-  "changelog": "https://github.com/YOUR_USERNAME/evolution-ui/blob/main/CHANGELOG.md",
+  "changelog": "https://github.com/Glazkoff/evolution-ui/blob/main/CHANGELOG.md",
   "icon": "🧬",
   "screenshots": [
-    "https://github.com/YOUR_USERNAME/evolution-ui/raw/main/docs/screenshots/dashboard.png",
-    "https://github.com/YOUR_USERNAME/evolution-ui/raw/main/docs/screenshots/thinking-config.png"
+    "https://github.com/Glazkoff/evolution-ui/raw/main/docs/screenshots/dashboard.png",
+    "https://github.com/Glazkoff/evolution-ui/raw/main/docs/screenshots/thinking-config.png"
   ]
 }

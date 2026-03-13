@@ -84,17 +84,17 @@ Evolution UI makes this process **visible** and **controllable**.
 
 ```bash
 # Install as OpenClaw skill
-openclaw skill install https://github.com/YOUR_USERNAME/evolution-ui
+openclaw skill install https://github.com/Glazkoff/evolution-ui
 
 # Or with curl
-curl -fsSL https://raw.githubusercontent.com/YOUR_USERNAME/evolution-ui/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Glazkoff/evolution-ui/main/scripts/install.sh | bash
 ```
 
 ### Option 2: Manual Installation
 
 ```bash
 # Clone repository
-git clone https://github.com/YOUR_USERNAME/evolution-ui.git
+git clone https://github.com/Glazkoff/evolution-ui.git
 cd evolution-ui
 
 # Create virtual environment
@@ -112,14 +112,14 @@ uvicorn main:app --host 0.0.0.0 --port 8080
 
 ```bash
 # Pull image
-docker pull YOUR_USERNAME/evolution-ui:latest
+docker pull Glazkoff/evolution-ui:latest
 
 # Run container
 docker run -d \
   -p 8080:8080 \
   -v ~/.openclaw:/root/.openclaw \
   --name evolution-ui \
-  YOUR_USERNAME/evolution-ui:latest
+  Glazkoff/evolution-ui:latest
 ```
 
 ### Option 4: Systemd Service
@@ -528,7 +528,7 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for deta
 
 ```bash
 # Clone repository
-git clone https://github.com/YOUR_USERNAME/evolution-ui.git
+git clone https://github.com/Glazkoff/evolution-ui.git
 cd evolution-ui
 
 # Create virtual environment
@@ -567,7 +567,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📞 Support
 
 - **Documentation**: [docs.openclaw.ai/evolution-ui](https://docs.openclaw.ai/evolution-ui)
-- **Issues**: [GitHub Issues](https://github.com/YOUR_USERNAME/evolution-ui/issues)
+- **Issues**: [GitHub Issues](https://github.com/Glazkoff/evolution-ui/issues)
 - **Discord**: [OpenClaw Community](https://discord.gg/clawd)
 - **Email**: support@openclaw.ai
 
