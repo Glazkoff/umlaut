@@ -1302,8 +1302,22 @@ EVOLUTION_PROCESSES: Dict[str, subprocess.Popen] = {}
 
 
 @app.post("/api/projects/{project_name}/evolution/start")
-async def start_evolution(project_name: str, budget: float = 50.0, max_cycles: int = 100):
-    """Start Ralph Loop evolution for a project."""
+async def start_evolution(
+    project_name: str, 
+    budget: float = 50.0, 
+    max_cycles: int = 100,
+    mode: str = "autonomous",  # "autonomous" or "prd"
+    create_branch: bool = True
+):
+    """Start Ralph Loop evolution for a project.
+    
+    Args:
+        project_name: Project to evolve
+        budget: Budget limit in USD
+        max_cycles: Maximum number of evolution cycles
+        mode: "autonomous" (agent plans tasks) or "prd" (use PRD user stories)
+        create_branch: Create evolution branch at start
+    """
     global EVOLUTION_PROCESSES
     
     project_dir = get_project_dir(project_name)
@@ -1320,6 +1334,44 @@ async def start_evolution(project_name: str, budget: float = 50.0, max_cycles: i
                 "message": "Evolution already running for this project"
             }
     
+    # Create evolution branch if requested
+    repo_dir = REPOS_DIR / project_name
+    if create_branch and repo_dir.exists():
+        try:
+            # Check if evolution branch exists
+            result = subprocess.run(
+                ["git", "branch", "--list", "evolution"],
+                cwd=repo_dir, capture_output=True, text=True
+            )
+            
+            if result.stdout.strip():
+                # Checkout existing evolution branch
+                subprocess.run(
+                    ["git", "checkout", "evolution"],
+                    cwd=repo_dir, capture_output=True, text=True
+                )
+            else:
+                # Create new evolution branch
+                subprocess.run(
+                    ["git", "checkout", "-B", "evolution"],
+                    cwd=repo_dir, capture_output=True, text=True
+                )
+                # Push to remote
+                subprocess.run(
+                    ["git", "push", "-u", "origin", "evolution"],
+                    cwd=repo_dir, capture_output=True, text=True
+                )
+        except Exception as e:
+            print(f"Warning: Failed to create evolution branch: {e}")
+    
+    # Update state with mode
+    state = load_json(project_name, "STATE.json")
+    state["phase"] = "RUNNING"
+    state["started_at"] = datetime.utcnow().isoformat() + "Z"
+    state["mode"] = mode
+    state["budget"]["limit_usd"] = budget
+    save_json(project_name, "STATE.json", state)
+    
     # Start evolution runner
     script_path = Path(__file__).parent / "scripts" / "run-evolution.sh"
     if not script_path.exists():
@@ -1333,16 +1385,10 @@ async def start_evolution(project_name: str, budget: float = 50.0, max_cycles: i
             stdout=log,
             stderr=subprocess.STDOUT,
             start_new_session=True,
-            env={**os.environ, "BUDGET": str(budget), "MAX_CYCLES": str(max_cycles)}
+            env={**os.environ, "BUDGET": str(budget), "MAX_CYCLES": str(max_cycles), "MODE": mode}
         )
     
     EVOLUTION_PROCESSES[project_name] = proc
-    
-    # Update state
-    state = load_json(project_name, "STATE.json")
-    state["phase"] = "RUNNING"
-    state["started_at"] = datetime.utcnow().isoformat() + "Z"
-    save_json(project_name, "STATE.json", state)
     
     # Broadcast
     await manager.broadcast({
@@ -1350,7 +1396,8 @@ async def start_evolution(project_name: str, budget: float = 50.0, max_cycles: i
         "project": project_name,
         "pid": proc.pid,
         "budget": budget,
-        "max_cycles": max_cycles
+        "max_cycles": max_cycles,
+        "mode": mode
     })
     
     return {
@@ -1358,6 +1405,7 @@ async def start_evolution(project_name: str, budget: float = 50.0, max_cycles: i
         "pid": proc.pid,
         "budget": budget,
         "max_cycles": max_cycles,
+        "mode": mode,
         "log_file": str(log_file),
         "message": "Evolution started. Monitor via /api/projects/{project}/evolution/status"
     }

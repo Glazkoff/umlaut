@@ -826,13 +826,151 @@ function updatePhaseButtons(phase) {
 // ============== Evolution Controls ==============
 
 async function startEvolution() {
+    // Show the start evolution modal
+    showStartEvolutionModal();
+}
+
+function showStartEvolutionModal() {
+    if (!currentProject) return;
+    
+    // Reset form
+    document.getElementById('evolutionMode').value = 'autonomous';
+    document.getElementById('evolutionBudget').value = 50;
+    document.getElementById('evolutionMaxCycles').value = 100;
+    document.getElementById('prdDescription').value = '';
+    document.getElementById('prdBranchName').value = '';
+    document.getElementById('prdStoriesList').innerHTML = '';
+    
+    // Toggle PRD section visibility
+    togglePRDSection();
+    
+    showModal('startEvolutionModal');
+}
+
+function togglePRDSection() {
+    const mode = document.getElementById('evolutionMode').value;
+    const prdSection = document.getElementById('prdSection');
+    prdSection.style.display = mode === 'prd' ? 'block' : 'none';
+}
+
+function addUserStory() {
+    const container = document.getElementById('prdStoriesList');
+    const storyId = `US-${container.children.length + 1}`.padStart(6, '0').replace('US-00', 'US-0');
+    
+    const storyHtml = `
+        <div class="prd-story" id="story-${storyId}">
+            <div class="story-header">
+                <span class="story-id">${storyId}</span>
+                <button onclick="removeUserStory('${storyId}')" class="btn btn-sm btn-danger">×</button>
+            </div>
+            <div class="form-group">
+                <input type="text" class="story-title" placeholder="Title" data-field="title">
+            </div>
+            <div class="form-group">
+                <textarea class="story-description" placeholder="As a developer, I need..." data-field="description"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Acceptance Criteria (one per line)</label>
+                <textarea class="story-criteria" placeholder="Add migration&#10;Typecheck passes&#10;Tests pass" data-field="acceptanceCriteria"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Priority</label>
+                <select class="story-priority" data-field="priority">
+                    <option value="1">1 - Highest</option>
+                    <option value="2">2</option>
+                    <option value="3" selected>3 - Medium</option>
+                    <option value="4">4</option>
+                    <option value="5">5 - Lowest</option>
+                </select>
+            </div>
+        </div>
+    `;
+    
+    container.insertAdjacentHTML('beforeend', storyHtml);
+}
+
+function removeUserStory(storyId) {
+    const story = document.getElementById(`story-${storyId}`);
+    if (story) story.remove();
+}
+
+async function startEvolutionWithConfig() {
+    if (!currentProject) return;
+    
+    const mode = document.getElementById('evolutionMode').value;
+    const budget = parseFloat(document.getElementById('evolutionBudget').value);
+    const maxCycles = parseInt(document.getElementById('evolutionMaxCycles').value);
+    
     try {
-        await apiCall('POST', `/api/projects/${currentProject}/start`);
-        showNotification('Evolution started!', 'success');
+        // If PRD mode, create PRD first
+        if (mode === 'prd') {
+            const prd = buildPRDFromForm();
+            if (!prd) {
+                showNotification('Please add at least one user story', 'error');
+                return;
+            }
+            
+            // Save PRD
+            await apiCall('POST', `/api/projects/${currentProject}/prd`, prd);
+            showNotification('PRD created successfully', 'success');
+        }
+        
+        // Start evolution
+        const result = await apiCall('POST', 
+            `/api/projects/${currentProject}/evolution/start?budget=${budget}&max_cycles=${maxCycles}&mode=${mode}&create_branch=true`
+        );
+        
+        closeModal('startEvolutionModal');
+        showNotification(`Evolution started in ${mode} mode!`, 'success');
+        
+        // Refresh UI
+        setTimeout(() => loadProject(currentProject), 1000);
     } catch (error) {
-        showNotification('Failed to start evolution', 'error');
+        showNotification(`Failed to start evolution: ${error.message}`, 'error');
     }
 }
+
+function buildPRDFromForm() {
+    const description = document.getElementById('prdDescription').value;
+    const branchName = document.getElementById('prdBranchName').value;
+    const storyElements = document.querySelectorAll('.prd-story');
+    
+    if (storyElements.length === 0) return null;
+    
+    const userStories = [];
+    storyElements.forEach((storyEl, index) => {
+        const title = storyEl.querySelector('.story-title').value;
+        if (!title) return;
+        
+        const story = {
+            id: storyEl.querySelector('.story-id').textContent,
+            title: title,
+            description: storyEl.querySelector('.story-description').value,
+            acceptanceCriteria: storyEl.querySelector('.story-criteria').value.split('\n').filter(c => c.trim()),
+            priority: parseInt(storyEl.querySelector('.story-priority').value),
+            passes: false,
+            notes: ''
+        };
+        userStories.push(story);
+    });
+    
+    if (userStories.length === 0) return null;
+    
+    return {
+        project: currentProject,
+        branchName: branchName || `evolution/${currentProject}`,
+        description: description,
+        userStories: userStories
+    };
+}
+
+// Add event listener for mode change
+document.addEventListener('DOMContentLoaded', () => {
+    const modeSelect = document.getElementById('evolutionMode');
+    if (modeSelect) {
+        modeSelect.addEventListener('change', togglePRDSection);
+    }
+});
 
 async function pauseEvolution() {
     try {
