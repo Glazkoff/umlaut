@@ -1105,6 +1105,10 @@ async function loadReport() {
     }
 }
 
+function showModal(modalId) {
+    document.getElementById(modalId).classList.add('active');
+}
+
 function closeModal(modalId) {
     document.getElementById(modalId).classList.remove('active');
 }
