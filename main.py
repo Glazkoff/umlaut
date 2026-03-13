@@ -865,7 +865,7 @@ async def rollback_project(project_name: str):
     repo_dir = REPOS_DIR / project_name
     if repo_dir.exists() and (repo_dir / ".git").exists():
         try:
-            # Reset to main/master
+            # Reset to main
             subprocess.run(
                 ["git", "fetch", "origin"],
                 cwd=repo_dir,

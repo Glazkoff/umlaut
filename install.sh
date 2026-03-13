@@ -1,6 +1,6 @@
 #!/bin/bash
 # Umlaut - One-line installer
-# Usage: curl -fsSL https://raw.githubusercontent.com/Glazkoff/umlaut/master/install.sh | bash
+# Usage: curl -fsSL https://raw.githubusercontent.com/Glazkoff/umlaut/main/install.sh | bash
 
 set -e
 
