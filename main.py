@@ -492,13 +492,19 @@ async def get_history(project_name: str, limit: int = 100, debug: bool = False):
             
             # Skip uninformative entries
             msg = entry.get("message", "")
-            if msg in [
+            skip_messages = [
                 "Evolution cycle started",
                 "Agent starting - reading context and analyzing...",
                 "Invoking OpenClaw agent with thinking=medium",
                 "Invoking OpenClaw agent with thinking=low",
                 "Invoking OpenClaw agent with thinking=high",
-            ]:
+                "Auto-restart scheduled",
+            ]
+            if msg in skip_messages:
+                continue
+            
+            # Skip "Agent working..." progress messages
+            if msg.startswith("Agent working") or msg.startswith("Agent timeout"):
                 continue
             
             # Skip duplicate "preparing context" messages
