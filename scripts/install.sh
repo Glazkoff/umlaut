@@ -73,7 +73,7 @@ install() {
     # Clone or download
     if command -v git &> /dev/null; then
         log_info "Cloning from GitHub..."
-        git clone https://github.com/YOUR_USERNAME/umlaut.git . 2>/dev/null || {
+        git clone https://github.com/Glazkoff/umlaut.git . 2>/dev/null || {
             log_warning "Repository already exists, pulling latest..."
             git pull
         }
