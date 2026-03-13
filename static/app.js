@@ -397,13 +397,49 @@ function renderHistory(history) {
     let html = '';
     history.forEach(item => {
         const time = item.timestamp ? new Date(item.timestamp).toLocaleTimeString() : '';
-        const type = item.type || 'info';
+        const type = item.type || item.action || 'info';
         const forced = item.forced ? ' ⚡' : '';
         
+        // Build better message based on action type
+        let message = '';
+        let itemClass = type;
+        
+        if (item.action === 'execute_completed') {
+            const task = item.task_id || 'task';
+            const files = item.changes?.files_added?.length || 0;
+            const tests = item.tests_written || 0;
+            const outcome = item.outcome === 'success' ? '✅' : '⚠️';
+            message = `${outcome} Executed ${task}: +${item.changes?.lines_added || 0} lines, ${tests} tests, ${files} files`;
+            itemClass = item.outcome === 'success' ? 'success' : 'warning';
+        } else if (item.action === 'review_completed') {
+            const task = item.task_id || 'task';
+            const decision = item.decision || 'UNKNOWN';
+            const tests = item.metrics?.tests_passing || 0;
+            const coverage = item.metrics?.coverage_pct || 0;
+            const icon = decision === 'KEEP' ? '✅' : decision === 'REVISE' ? '⚠️' : '❌';
+            message = `${icon} Reviewed ${task}: ${tests} tests, ${coverage}% coverage → ${decision}`;
+            itemClass = decision === 'KEEP' ? 'success' : 'warning';
+        } else if (item.action === 'plan_completed') {
+            const tasks = item.tasks_selected?.join(', ') || 'tasks';
+            message = `📋 Planned: ${tasks}`;
+            itemClass = 'info';
+        } else if (item.action === 'analysis_completed') {
+            const issues = item.findings?.code_smells || 0;
+            const tasks = item.tasks_added_to_backlog?.length || 0;
+            message = `🔍 Analyzed: ${issues} issues found, ${tasks} tasks added`;
+            itemClass = 'info';
+        } else if (item.message) {
+            // Regular message
+            message = item.message + forced;
+        } else {
+            // Fallback
+            message = item.action || JSON.stringify(item).substring(0, 100);
+        }
+        
         html += `
-            <div class="activity-item ${type}">
+            <div class="activity-item ${itemClass}">
                 <span class="activity-time">${time}</span>
-                <span class="activity-text">${item.message || item.action || JSON.stringify(item)}${forced}</span>
+                <span class="activity-text">${message}</span>
             </div>
         `;
     });

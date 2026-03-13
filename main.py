@@ -469,10 +469,51 @@ async def get_history(project_name: str, limit: int = 100, debug: bool = False):
         return {"history": [], "debug_info": None}
     
     lines = history_path.read_text().strip().split("\n")
-    history = [json.loads(line) for line in lines[-limit:] if line.strip()]
+    history = []
+    
+    for line in lines[-limit*2:]:  # Get more to filter later
+        if not line.strip():
+            continue
+        try:
+            entry = json.loads(line)
+            
+            # Normalize timestamp format
+            ts = entry.get("timestamp", "")
+            if ts:
+                # Remove milliseconds and normalize timezone
+                # "2026-03-13T14:58:55.091242+00:00Z" -> "2026-03-13T14:58:55Z"
+                if "." in ts:
+                    ts = ts.split(".")[0]
+                if ts.endswith("+00:00"):
+                    ts = ts.replace("+00:00", "")
+                if not ts.endswith("Z"):
+                    ts = ts + "Z"
+                entry["timestamp"] = ts
+            
+            # Skip uninformative entries
+            msg = entry.get("message", "")
+            if msg in [
+                "Evolution cycle started",
+                "Agent starting - reading context and analyzing...",
+                "Invoking OpenClaw agent with thinking=medium",
+                "Invoking OpenClaw agent with thinking=low",
+                "Invoking OpenClaw agent with thinking=high",
+            ]:
+                continue
+            
+            # Skip duplicate "preparing context" messages
+            if "preparing context" in msg.lower():
+                continue
+            
+            history.append(entry)
+        except:
+            continue
     
     # Sort by timestamp descending (newest first)
     history.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
+    
+    # Limit after filtering
+    history = history[:limit]
     
     # Add debug info if requested
     debug_info = None
