@@ -82,6 +82,25 @@ class Task(BaseModel):
     commits: List[str] = []
     files_changed: List[str] = []
 
+
+# Ralph PRD Models
+class UserStory(BaseModel):
+    id: str = "US-001"
+    title: str
+    description: str = ""
+    acceptanceCriteria: List[str] = []
+    priority: int = 1
+    passes: bool = False
+    notes: str = ""
+
+
+class PRD(BaseModel):
+    project: str
+    branchName: str
+    description: str
+    userStories: List[UserStory] = []
+
+
 class Project(BaseModel):
     name: str
     phase: str = "IDLE"
@@ -915,6 +934,215 @@ async def get_project_config(project_name: str):
     return {
         "thinking_levels": thinking_levels,
         "custom_config": config
+    }
+
+
+# ============== PRD Routes (Ralph Format) ==============
+
+@app.get("/api/projects/{project_name}/prd")
+async def get_prd(project_name: str) -> dict:
+    """Get PRD for a project."""
+    try:
+        return load_json(project_name, "prd.json")
+    except HTTPException:
+        # Return empty PRD if not exists
+        return {
+            "project": project_name,
+            "branchName": "",
+            "description": "",
+            "userStories": []
+        }
+
+
+@app.post("/api/projects/{project_name}/prd")
+async def create_prd(project_name: str, prd: PRD):
+    """Create or update PRD for a project."""
+    prd_dict = prd.model_dump()
+    save_json(project_name, "prd.json", prd_dict)
+    
+    await manager.broadcast({
+        "type": "prd_updated",
+        "project": project_name,
+        "prd": prd_dict
+    })
+    
+    return prd_dict
+
+
+@app.post("/api/projects/{project_name}/prd/stories")
+async def add_user_story(project_name: str, story: UserStory):
+    """Add a user story to PRD."""
+    try:
+        prd = load_json(project_name, "prd.json")
+    except HTTPException:
+        prd = {
+            "project": project_name,
+            "branchName": f"feature/{project_name}",
+            "description": "",
+            "userStories": []
+        }
+    
+    # Auto-generate ID if not provided
+    if not story.id or story.id == "US-001":
+        existing_ids = [s["id"] for s in prd["userStories"]]
+        next_num = len(prd["userStories"]) + 1
+        story.id = f"US-{next_num:03d}"
+        while story.id in existing_ids:
+            next_num += 1
+            story.id = f"US-{next_num:03d}"
+    
+    prd["userStories"].append(story.model_dump())
+    save_json(project_name, "prd.json", prd)
+    
+    await manager.broadcast({
+        "type": "story_added",
+        "project": project_name,
+        "story": story.model_dump()
+    })
+    
+    return story.model_dump()
+
+
+@app.put("/api/projects/{project_name}/prd/stories/{story_id}")
+async def update_user_story(project_name: str, story_id: str, story: UserStory):
+    """Update a user story."""
+    prd = load_json(project_name, "prd.json")
+    
+    for i, s in enumerate(prd["userStories"]):
+        if s["id"] == story_id:
+            prd["userStories"][i] = story.model_dump()
+            save_json(project_name, "prd.json", prd)
+            
+            await manager.broadcast({
+                "type": "story_updated",
+                "project": project_name,
+                "story": story.model_dump()
+            })
+            
+            return story.model_dump()
+    
+    raise HTTPException(status_code=404, detail="Story not found")
+
+
+@app.put("/api/projects/{project_name}/prd/stories/{story_id}/passes")
+async def mark_story_passes(project_name: str, story_id: str, passes: bool = True):
+    """Mark a user story as passing or not."""
+    prd = load_json(project_name, "prd.json")
+    
+    for i, s in enumerate(prd["userStories"]):
+        if s["id"] == story_id:
+            prd["userStories"][i]["passes"] = passes
+            save_json(project_name, "prd.json", prd)
+            
+            await manager.broadcast({
+                "type": "story_updated",
+                "project": project_name,
+                "story": prd["userStories"][i]
+            })
+            
+            return prd["userStories"][i]
+    
+    raise HTTPException(status_code=404, detail="Story not found")
+
+
+@app.delete("/api/projects/{project_name}/prd/stories/{story_id}")
+async def delete_user_story(project_name: str, story_id: str):
+    """Delete a user story."""
+    prd = load_json(project_name, "prd.json")
+    
+    for i, s in enumerate(prd["userStories"]):
+        if s["id"] == story_id:
+            deleted = prd["userStories"].pop(i)
+            save_json(project_name, "prd.json", prd)
+            
+            await manager.broadcast({
+                "type": "story_deleted",
+                "project": project_name,
+                "story_id": story_id
+            })
+            
+            return {"status": "deleted", "story": deleted}
+    
+    raise HTTPException(status_code=404, detail="Story not found")
+
+
+@app.get("/api/projects/{project_name}/prd/next")
+async def get_next_story(project_name: str):
+    """Get the next incomplete story (highest priority, passes=false)."""
+    try:
+        prd = load_json(project_name, "prd.json")
+    except HTTPException:
+        return {"story": None, "remaining": 0, "total": 0}
+    
+    incomplete = [s for s in prd["userStories"] if not s.get("passes", False)]
+    
+    if not incomplete:
+        return {"story": None, "remaining": 0, "total": len(prd["userStories"])}
+    
+    # Sort by priority (lowest number = highest priority)
+    incomplete.sort(key=lambda s: s.get("priority", 999))
+    next_story = incomplete[0]
+    
+    return {
+        "story": next_story,
+        "remaining": len(incomplete),
+        "total": len(prd["userStories"])
+    }
+
+
+@app.post("/api/projects/{project_name}/prd/convert")
+async def convert_prd_to_tasks(project_name: str):
+    """Convert PRD user stories to evolution tasks."""
+    prd = load_json(project_name, "prd.json")
+    tasks = load_json(project_name, "TASKS.json")
+    
+    converted = 0
+    for story in prd["userStories"]:
+        # Check if task already exists
+        existing_ids = [t["id"] for t in tasks["backlog"] + tasks["in_progress"] + tasks["done"] + tasks["blocked"]]
+        if story["id"] in existing_ids:
+            continue
+        
+        # Convert to task
+        task = {
+            "id": story["id"],
+            "title": story["title"],
+            "description": story.get("description", ""),
+            "category": "feature",
+            "priority_score": 10 - story.get("priority", 5),
+            "impact": 5,
+            "effort": 5,
+            "risk": 3,
+            "status": "done" if story.get("passes", False) else "backlog",
+            "dependencies": [],
+            "acceptance_criteria": story.get("acceptanceCriteria", []),
+            "created_at": datetime.utcnow().isoformat(),
+            "started_at": None,
+            "completed_at": datetime.utcnow().isoformat() if story.get("passes", False) else None,
+            "blocked_reason": None,
+            "commits": [],
+            "files_changed": []
+        }
+        
+        if story.get("passes", False):
+            tasks["done"].append(task)
+        else:
+            tasks["backlog"].append(task)
+        
+        converted += 1
+    
+    save_json(project_name, "TASKS.json", tasks)
+    
+    await manager.broadcast({
+        "type": "tasks_updated",
+        "project": project_name,
+        "converted": converted
+    })
+    
+    return {
+        "status": "converted",
+        "stories_converted": converted,
+        "total_stories": len(prd["userStories"])
     }
 
 
