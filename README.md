@@ -520,36 +520,6 @@ tail -f /tmp/umlaut.log
 
 ---
 
-## 🤝 Contributing
-
-We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details.
-
-### Development Setup
-
-```bash
-# Clone repository
-git clone https://github.com/Glazkoff/umlaut.git
-cd umlaut
-
-# Create virtual environment
-python -m venv .venv
-source .venv/bin/activate
-
-# Install dev dependencies
-pip install -r requirements-dev.txt
-
-# Run tests
-pytest tests/
-
-# Run linter
-ruff check .
-
-# Format code
-black .
-```
-
----
-
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
@@ -561,15 +531,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Built with [FastAPI](https://fastapi.tiangolo.com/)
 - UI inspired by modern dashboard designs
 - Powered by OpenClaw's self-evolution engine
-
----
-
-## 📞 Support
-
-- **Documentation**: [docs.openclaw.ai/umlaut](https://docs.openclaw.ai/umlaut)
-- **Issues**: [GitHub Issues](https://github.com/Glazkoff/umlaut/issues)
-- **Discord**: [OpenClaw Community](https://discord.gg/clawd)
-- **Email**: support@openclaw.ai
 
 ---
 
