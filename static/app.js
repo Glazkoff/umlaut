@@ -853,7 +853,107 @@ function showStartEvolutionModal() {
 function togglePRDSection() {
     const mode = document.getElementById('evolutionMode').value;
     const prdSection = document.getElementById('prdSection');
-    prdSection.style.display = mode === 'prd' ? 'block' : 'none';
+    const prdGenerateSection = document.getElementById('prdGenerateSection');
+    
+    // Hide all sections first
+    prdSection.style.display = 'none';
+    prdGenerateSection.style.display = 'none';
+    
+    // Show appropriate section based on mode
+    if (mode === 'prd') {
+        prdSection.style.display = 'block';
+    } else if (mode === 'prd-generate') {
+        prdGenerateSection.style.display = 'block';
+    }
+}
+
+async function generatePRD() {
+    if (!currentProject) return;
+    
+    const description = document.getElementById('prdFeatureDescription').value;
+    if (!description || description.trim().length < 20) {
+        showNotification('Please provide a more detailed feature description (at least 20 characters)', 'warning');
+        return;
+    }
+    
+    const btn = document.getElementById('btnGeneratePRD');
+    const statusDiv = document.getElementById('prdGenerateStatus');
+    
+    btn.disabled = true;
+    btn.innerHTML = '⏳ Generating PRD...';
+    statusDiv.innerHTML = '<div class="info-message">🤖 AI is analyzing your request and generating user stories...</div>';
+    
+    try {
+        const result = await apiCall('POST', 
+            `/api/projects/${currentProject}/prd/generate?description=${encodeURIComponent(description)}`
+        );
+        
+        statusDiv.innerHTML = `<div class="success-message">✅ PRD Generated!</div>`;
+        showNotification(result.message, 'success');
+        
+        // Switch to PRD mode and show generated stories
+        document.getElementById('evolutionMode').value = 'prd';
+        togglePRDSection();
+        
+        // Populate the PRD form with generated data
+        if (result.prd) {
+            document.getElementById('prdDescription').value = result.prd.description || '';
+            document.getElementById('prdBranchName').value = result.prd.branchName || '';
+            
+            // Add user stories to the form
+            const container = document.getElementById('prdStoriesList');
+            container.innerHTML = '';
+            
+            if (result.prd.userStories) {
+                result.prd.userStories.forEach((story, index) => {
+                    addUserStoryWithData(story);
+                });
+            }
+        }
+        
+    } catch (error) {
+        statusDiv.innerHTML = `<div class="error-message">❌ ${error.message}</div>`;
+        showNotification(`Failed to generate PRD: ${error.message}`, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '✨ Generate PRD';
+    }
+}
+
+function addUserStoryWithData(story) {
+    const container = document.getElementById('prdStoriesList');
+    const storyId = story.id || `US-${container.children.length + 1}`;
+    
+    const storyHtml = `
+        <div class="prd-story" id="story-${storyId}">
+            <div class="story-header">
+                <span class="story-id">${storyId}</span>
+                <button onclick="removeUserStory('${storyId}')" class="btn btn-sm btn-danger">×</button>
+            </div>
+            <div class="form-group">
+                <input type="text" class="story-title" placeholder="Title" data-field="title" value="${escapeHtml(story.title || '')}">
+            </div>
+            <div class="form-group">
+                <textarea class="story-description" placeholder="As a developer, I need..." data-field="description">${escapeHtml(story.description || '')}</textarea>
+            </div>
+            <div class="form-group">
+                <label>Acceptance Criteria (one per line)</label>
+                <textarea class="story-criteria" placeholder="Add migration&#10;Typecheck passes&#10;Tests pass" data-field="acceptanceCriteria">${escapeHtml((story.acceptanceCriteria || []).join('\n'))}</textarea>
+            </div>
+            <div class="form-group">
+                <label>Priority</label>
+                <select class="story-priority" data-field="priority">
+                    <option value="1" ${story.priority === 1 ? 'selected' : ''}>1 - Highest</option>
+                    <option value="2" ${story.priority === 2 ? 'selected' : ''}>2</option>
+                    <option value="3" ${story.priority === 3 ? 'selected' : ''}>3 - Medium</option>
+                    <option value="4" ${story.priority === 4 ? 'selected' : ''}>4</option>
+                    <option value="5" ${story.priority === 5 ? 'selected' : ''}>5 - Lowest</option>
+                </select>
+            </div>
+        </div>
+    `;
+    
+    container.insertAdjacentHTML('beforeend', storyHtml);
 }
 
 function addUserStory() {
@@ -905,7 +1005,7 @@ async function startEvolutionWithConfig() {
     const maxCycles = parseInt(document.getElementById('evolutionMaxCycles').value);
     
     try {
-        // If PRD mode, create PRD first
+        // If PRD mode (not prd-generate), create/update PRD
         if (mode === 'prd') {
             const prd = buildPRDFromForm();
             if (!prd) {
@@ -915,12 +1015,16 @@ async function startEvolutionWithConfig() {
             
             // Save PRD
             await apiCall('POST', `/api/projects/${currentProject}/prd`, prd);
-            showNotification('PRD created successfully', 'success');
+            showNotification('PRD saved successfully', 'success');
         }
+        
+        // For prd-generate mode, PRD is already saved by generatePRD()
+        // Just switch mode to 'prd' for evolution
+        const evolutionMode = mode === 'prd-generate' ? 'prd' : mode;
         
         // Start evolution
         const result = await apiCall('POST', 
-            `/api/projects/${currentProject}/evolution/start?budget=${budget}&max_cycles=${maxCycles}&mode=${mode}&create_branch=true`
+            `/api/projects/${currentProject}/evolution/start?budget=${budget}&max_cycles=${maxCycles}&mode=${evolutionMode}&create_branch=true`
         );
         
         closeModal('startEvolutionModal');

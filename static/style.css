@@ -1296,3 +1296,60 @@ body {
     font-family: 'Courier New', monospace;
     color: var(--accent-primary);
 }
+
+/* PRD Generator Styles */
+#prdGenerateSection {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color);
+}
+
+#prdFeatureDescription {
+    width: 100%;
+    min-height: 120px;
+    padding: 12px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-size: 13px;
+    font-family: inherit;
+    resize: vertical;
+    line-height: 1.5;
+}
+
+#prdFeatureDescription:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+}
+
+.prd-generate-status {
+    margin-top: 16px;
+}
+
+.info-message {
+    padding: 12px;
+    background: rgba(88, 166, 255, 0.1);
+    border: 1px solid var(--accent-primary);
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.success-message {
+    padding: 12px;
+    background: rgba(72, 187, 120, 0.1);
+    border: 1px solid var(--accent-success);
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    color: var(--accent-success);
+}
+
+.error-message {
+    padding: 12px;
+    background: rgba(245, 101, 101, 0.1);
+    border: 1px solid var(--accent-danger);
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    color: var(--accent-danger);
+}

@@ -1058,6 +1058,118 @@ async def create_prd(project_name: str, prd: PRD):
     return prd_dict
 
 
+@app.post("/api/projects/{project_name}/prd/generate")
+async def generate_prd(project_name: str, description: str):
+    """Generate PRD from natural language description using LLM."""
+    import subprocess
+    import tempfile
+    
+    # Get repository info
+    repo_dir = REPOS_DIR / project_name
+    if not repo_dir.exists():
+        raise HTTPException(status_code=400, detail="Repository not cloned. Clone it first.")
+    
+    # Get codebase context
+    try:
+        result = subprocess.run(
+            ["find", str(repo_dir), "-type", "f", "(", "-name", "*.py", "-o", "-name", "*.ts", "-o", "-name", "*.js", "-o", "-name", "*.md", ")"],
+            capture_output=True, text=True, timeout=10
+        )
+        codebase_files = result.stdout.strip().split('\n')[:50]  # Limit to 50 files
+    except:
+        codebase_files = []
+    
+    # Build prompt for PRD generation
+    prompt = f"""You are a Product Manager AI assistant. Generate a detailed Product Requirements Document (PRD) in JSON format.
+
+PROJECT: {project_name}
+DESCRIPTION: {description}
+
+CODEBASE CONTEXT:
+- Repository: {repo_dir}
+- Key files: {len(codebase_files)} files found
+
+Generate a PRD with the following structure:
+1. Break down the feature into small, testable user stories
+2. Each story should be completable in one context window
+3. Include clear acceptance criteria
+4. Set priorities (1=highest, 5=lowest)
+
+OUTPUT FORMAT (JSON only, no markdown):
+{{
+  "project": "{project_name}",
+  "branchName": "feature/descriptive-name",
+  "description": "Brief feature description",
+  "userStories": [
+    {{
+      "id": "US-001",
+      "title": "Story title",
+      "description": "As a developer, I need...",
+      "acceptanceCriteria": ["Criterion 1", "Criterion 2"],
+      "priority": 1,
+      "passes": false,
+      "notes": ""
+    }}
+  ]
+}}
+
+RULES:
+- Each story must be small and focused
+- Include typecheck/tests in acceptance criteria
+- Use realistic priority values
+- Stories should build on each other
+- No markdown, only valid JSON
+
+Generate the PRD now:"""
+
+    # Use OpenClaw agent to generate PRD
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
+        f.write(prompt)
+        prompt_file = f.name
+    
+    try:
+        result = subprocess.run(
+            ["openclaw", "agent", "--message", prompt, "--thinking", "medium"],
+            capture_output=True, text=True, timeout=120, cwd=str(repo_dir)
+        )
+        
+        output = result.stdout
+        
+        # Extract JSON from output
+        import re
+        json_match = re.search(r'\{[\s\S]*"userStories"[\s\S]*\}', output)
+        if json_match:
+            prd_json = json.loads(json_match.group(0))
+        else:
+            # Fallback: try to parse entire output as JSON
+            prd_json = json.loads(output)
+        
+        # Save generated PRD
+        save_json(project_name, "prd.json", prd_json)
+        
+        await manager.broadcast({
+            "type": "prd_generated",
+            "project": project_name,
+            "prd": prd_json
+        })
+        
+        return {
+            "status": "generated",
+            "prd": prd_json,
+            "message": f"Generated PRD with {len(prd_json.get('userStories', []))} user stories"
+        }
+    
+    except json.JSONDecodeError as e:
+        raise HTTPException(status_code=500, detail=f"Failed to parse generated PRD: {str(e)}")
+    except subprocess.TimeoutExpired:
+        raise HTTPException(status_code=500, detail="PRD generation timed out")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"PRD generation failed: {str(e)}")
+    finally:
+        import os
+        os.unlink(prompt_file)
+
+
 @app.post("/api/projects/{project_name}/prd/stories")
 async def add_user_story(project_name: str, story: UserStory):
     """Add a user story to PRD."""

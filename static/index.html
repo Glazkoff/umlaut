@@ -428,7 +428,25 @@
                     <select id="evolutionMode">
                         <option value="autonomous">🤖 Autonomous - Agent analyzes and plans tasks</option>
                         <option value="prd">📋 PRD-Driven - Implement specific user stories</option>
+                        <option value="prd-generate">✨ Generate PRD - AI creates PRD from description</option>
                     </select>
+                </div>
+                
+                <div id="prdGenerateSection" style="display: none;">
+                    <div class="form-group">
+                        <label>Feature Description</label>
+                        <textarea id="prdFeatureDescription" placeholder="Describe what you want to build...
+
+Example: Add a task priority system with:
+- Priority field in database (High/Medium/Low)
+- UI to set priority when creating/editing tasks
+- Filter tasks by priority
+- Sort tasks by priority by default"></textarea>
+                    </div>
+                    <button onclick="generatePRD()" class="btn btn-primary btn-block" id="btnGeneratePRD">
+                        ✨ Generate PRD
+                    </button>
+                    <div id="prdGenerateStatus" class="prd-generate-status"></div>
                 </div>
                 
                 <div class="form-group">
