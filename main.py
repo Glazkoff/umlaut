@@ -246,16 +246,55 @@ async def create_project(project: Project):
 
 @app.delete("/api/projects/{project_name}")
 async def delete_project(project_name: str):
-    """Delete an evolution project."""
+    """Delete an evolution project completely."""
     import shutil
+    from pathlib import Path
+    
     project_dir = get_project_dir(project_name)
     if not project_dir.exists():
         raise HTTPException(status_code=404, detail="Project not found")
     
-    shutil.rmtree(project_dir)
+    # Stop any running evolution
+    global EVOLUTION_PROCESSES
+    if project_name in EVOLUTION_PROCESSES:
+        proc = EVOLUTION_PROCESSES[project_name]
+        if proc.poll() is None:
+            try:
+                os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+                proc.wait(timeout=5)
+            except:
+                try:
+                    os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+                except:
+                    pass
+        del EVOLUTION_PROCESSES[project_name]
+    
+    # Remove cron job if exists
+    try:
+        cron_file = Path(f"/etc/cron.d/evolution-{project_name}")
+        if cron_file.exists():
+            cron_file.unlink()
+            subprocess.run(["crontab", "-l"], capture_output=True)  # Reload cron
+    except Exception as e:
+        print(f"Warning: Failed to remove cron job: {e}")
+    
+    # Delete evolution data
+    if project_dir.exists():
+        shutil.rmtree(project_dir)
+    
+    # Delete repository clone (optional, ask user?)
+    repo_dir = REPOS_DIR / project_name
+    if repo_dir.exists():
+        # Don't delete by default - user might want to keep the code
+        # shutil.rmtree(repo_dir)
+        pass
+    
     await manager.broadcast({"type": "project_deleted", "project": project_name})
     
-    return {"status": "deleted"}
+    return {
+        "status": "deleted",
+        "message": f"Project {project_name} deleted. Repository clone preserved at {repo_dir}"
+    }
 
 
 # ============== Task Routes ==============

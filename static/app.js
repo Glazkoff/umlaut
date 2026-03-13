@@ -1000,6 +1000,33 @@ async function stopEvolution() {
     }
 }
 
+async function deleteProject() {
+    if (!currentProject) return;
+    
+    if (!confirm(`⚠️ DELETE PROJECT WARNING\n\nThis will permanently delete:\n\n• Evolution data (STATE, TASKS, HISTORY)\n• All logs and metrics\n• Cron jobs\n\nRepository clone will be preserved.\n\nType the project name "${currentProject}" to confirm:`)) {
+        return;
+    }
+    
+    // Ask for project name confirmation
+    const confirmation = prompt(`Type "${currentProject}" to confirm deletion:`);
+    if (confirmation !== currentProject) {
+        showNotification('Deletion cancelled - project name did not match', 'warning');
+        return;
+    }
+    
+    try {
+        const result = await apiCall('DELETE', `/api/projects/${currentProject}`);
+        showNotification(result.message || 'Project deleted successfully', 'success');
+        
+        // Reset UI
+        currentProject = null;
+        showEmptyState();
+        loadProjects();
+    } catch (error) {
+        showNotification(`Failed to delete project: ${error.message}`, 'error');
+    }
+}
+
 // ============== Modal Functions ==============
 
 function showNewProjectModal() {
