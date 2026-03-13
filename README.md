@@ -9,7 +9,7 @@
 
 **A modern web interface for monitoring and controlling OpenClaw's self-evolution engine**
 
-[Features](#features) • [Installation](#installation) • [Quick Start](#quick-start) • [Documentation](#documentation) • [API](#api-reference)
+[Features](#-features) • [Installation](#-installation) • [Quick Start](#-quick-start) • [Documentation](#-documentation) • [API](#-api-reference)
 
 </div>
 
